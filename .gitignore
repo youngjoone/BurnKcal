@@ -1,0 +1,38 @@
+# Local secrets (examples are safe to commit)
+.env
+.env.*
+!.env.example
+*.pem
+*.p12
+*.mobileprovision
+*.keystore
+
+# JavaScript / Expo
+node_modules/
+.expo/
+dist/
+web-build/
+coverage/
+*.tsbuildinfo
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+/mobile/ios/
+/mobile/android/
+
+# Java / Maven / Gradle
+target/
+build/
+.gradle/
+*.class
+
+# Editor / operating system
+.DS_Store
+.idea/
+*.iml
+.vscode/
+*.swp
+*.log
+
+# Local scratch files
+.tmp/
