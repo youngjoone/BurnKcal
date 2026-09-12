@@ -30,6 +30,7 @@ export function PreviewScreen({
       <Image
         source={{ uri: photo.uri }}
         style={styles.photo}
+        resizeMode="contain"
         accessibilityLabel="선택한 음식 사진"
       />
       <View style={styles.stack}>

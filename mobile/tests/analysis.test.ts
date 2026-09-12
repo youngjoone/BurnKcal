@@ -49,3 +49,21 @@ test("rejects malformed response bodies and food items without throwing", () => 
     assert.equal(isAnalysisResult(value), false);
   }
 });
+
+test("validates multi-food totals instead of accepting inconsistent AI numbers", () => {
+  const items = [
+    { name: "밥", portion: "1공기", kcal: 300 },
+    { name: "닭고기", portion: "1인분", kcal: 250 },
+    { name: "반찬", portion: "소량", kcal: 100 },
+  ];
+  assert.equal(isAnalysisResult({ ...sample, items }), true);
+  assert.equal(isAnalysisResult({ ...sample, items, totalKcal: 700 }), false);
+  assert.equal(
+    isAnalysisResult({
+      ...sample,
+      items: [{ ...items[0], kcal: 650.5 }],
+      totalKcal: 650.5,
+    }),
+    false,
+  );
+});

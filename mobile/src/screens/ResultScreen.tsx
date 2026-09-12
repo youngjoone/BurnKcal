@@ -19,11 +19,17 @@ export function ResultScreen({ photo, result, onReset }: Props) {
       {demo && <DemoNotice />}
       <Image
         source={{ uri: photo.uri }}
-        style={[styles.photo, { aspectRatio: 1.8 }]}
+        style={styles.photo}
+        resizeMode="contain"
         accessibilityLabel="전송한 음식 사진"
       />
       <View style={styles.card}>
-        <Text style={styles.label}>{result.title}</Text>
+        <View style={styles.row}>
+          <Text style={styles.label}>{result.title}</Text>
+          <Text style={styles.small}>
+            총 {result.items.length}개 음식{demo ? " · 예시" : ""}
+          </Text>
+        </View>
         <View style={{ flexDirection: "row", alignItems: "baseline", gap: 8 }}>
           <Text
             style={{
@@ -43,9 +49,34 @@ export function ResultScreen({ photo, result, onReset }: Props) {
           {demo ? "예시 범위" : "예상 범위"} {result.range.min}–
           {result.range.max} kcal
         </Text>
-        <View style={styles.divider} />
+      </View>
+      <View style={styles.stack}>
+        <View style={styles.row}>
+          <Text style={styles.label}>음식별 칼로리</Text>
+          <Text style={styles.small}>{demo ? "예시 구성" : "추정량 기준"}</Text>
+        </View>
         {result.items.map((item, index) => (
-          <View key={`${item.name}-${index}`} style={styles.row}>
+          <View key={`${item.name}-${index}`} style={[styles.card, styles.row]}>
+            <View
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: 12,
+                backgroundColor: colors.pale,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Text
+                style={{
+                  color: colors.primary,
+                  fontSize: 12,
+                  fontWeight: "700",
+                }}
+              >
+                {String(index + 1).padStart(2, "0")}
+              </Text>
+            </View>
             <View style={{ flex: 1, gap: 4 }}>
               <Text style={styles.label}>{item.name}</Text>
               <Text style={styles.small}>{item.portion}</Text>

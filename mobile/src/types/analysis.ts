@@ -13,7 +13,7 @@ export function isAnalysisResult(value: unknown): value is AnalysisResult {
   if (!value || typeof value !== "object") return false;
   const v = value as Record<string, unknown>;
   const kcal = (n: unknown): n is number =>
-    typeof n === "number" && Number.isFinite(n) && n >= 0;
+    typeof n === "number" && Number.isSafeInteger(n) && n >= 0;
   const range = v.range as AnalysisResult["range"] | undefined;
   return (
     (v.mode === "demo" || v.mode === "ai") &&
@@ -33,6 +33,7 @@ export function isAnalysisResult(value: unknown): value is AnalysisResult {
         typeof item.portion === "string" &&
         kcal(item.kcal),
     ) &&
+    v.items.reduce((sum, item) => sum + item.kcal, 0) === v.totalKcal &&
     Array.isArray(v.notices) &&
     v.notices.every((notice) => typeof notice === "string")
   );
