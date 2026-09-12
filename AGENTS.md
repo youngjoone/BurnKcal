@@ -7,6 +7,7 @@
 - [docs/API.md](docs/API.md): 앱과 서버의 요청·응답 규약
 - [docs/TESTING.md](docs/TESTING.md): 검증 기준과 수동 확인 항목
 - [docs/ROADMAP.md](docs/ROADMAP.md): 구현된 범위와 다음 작업
+- [docs/PRODUCT_STRATEGY.md](docs/PRODUCT_STRATEGY.md): 경쟁 기능, 차별화 가설, 개발 우선순위
 - 하위 디렉터리 작업 시 해당 `AGENTS.md`도 읽습니다.
 
 ## 공통 규칙

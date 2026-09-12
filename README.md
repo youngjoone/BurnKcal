@@ -59,6 +59,7 @@ Mac에서 [웹 미리보기](http://localhost:8081)와 [서버 상태](http://lo
 | [LOCAL_DEVELOPMENT](docs/LOCAL_DEVELOPMENT.md) | Xcode·시뮬레이터·아이폰에서 어떻게 실행하는가? |
 | [TESTING](docs/TESTING.md) | 무엇을 검증하면 변경을 완료할 수 있는가? |
 | [ROADMAP](docs/ROADMAP.md) | 무엇이 구현됐고 Gemini 연결은 언제 하는가? |
+| [PRODUCT_STRATEGY](docs/PRODUCT_STRATEGY.md) | 기존 앱과의 격차를 무엇부터 줄이고 어떻게 차별화할 것인가? |
 | [AGENTS](AGENTS.md) | 개발 에이전트는 어떤 규칙으로 작업하는가? |
 
 ## 검증
