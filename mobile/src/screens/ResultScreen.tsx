@@ -9,6 +9,7 @@ import { colors, styles } from "../theme";
 
 type Props = {
   photo: MealPhoto;
+  recordDay: string;
   result: AnalysisResult;
   busy: boolean;
   onSave: (items: Food[]) => void;
@@ -18,6 +19,7 @@ type Props = {
 
 export function ResultScreen({
   photo,
+  recordDay,
   result,
   busy,
   onSave,
@@ -106,6 +108,11 @@ export function ResultScreen({
           onScrollTop();
         }}
       />
+      {!demo && (
+        <Text style={styles.small}>
+          {recordDay} 식사로 저장돼요. 실제로 먹은 양을 확인해 주세요.
+        </Text>
+      )}
       {!demo && (
         <Button
           title="먹은 양 확인 · 식사 저장"

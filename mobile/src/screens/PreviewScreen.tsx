@@ -7,6 +7,7 @@ import { colors, styles } from "../theme";
 type Props = {
   mode: AnalysisMode | null;
   photo: MealPhoto;
+  recordDay: string;
   note: string;
   onNote: (note: string) => void;
   busy: boolean;
@@ -17,6 +18,7 @@ type Props = {
 export function PreviewScreen({
   mode,
   photo,
+  recordDay,
   note,
   onNote,
   busy,
@@ -26,7 +28,7 @@ export function PreviewScreen({
   return (
     <>
       <View style={styles.stack}>
-        <Text style={styles.tag}>사진 확인</Text>
+        <Text style={styles.tag}>사진 확인 · {recordDay}</Text>
         <Text style={styles.title}>분석할 사진을 확인해요.</Text>
       </View>
       <Image

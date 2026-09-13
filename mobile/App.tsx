@@ -44,9 +44,16 @@ type Screen =
   | { step: "settings" }
   | { step: "profile" }
   | { step: "journal" }
+  | { step: "manualMeal"; id: string; recordDay: string }
   | { step: "editMeal"; meal: Meal }
-  | { step: "preview"; photo: MealPhoto }
-  | { step: "result"; photo: MealPhoto; result: AnalysisResult; id: string };
+  | { step: "preview"; photo: MealPhoto; recordDay: string }
+  | {
+      step: "result";
+      photo: MealPhoto;
+      result: AnalysisResult;
+      id: string;
+      recordDay: string;
+    };
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>({ step: "loading" });
@@ -56,6 +63,7 @@ export default function App() {
   const [meals, setMeals] = useState<Meal[]>([]);
   const [storageReady, setStorageReady] = useState(false);
   const [day, setDay] = useState(localDate());
+  const [journalDay, setJournalDay] = useState<string | null>(null);
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
   const [picking, setPicking] = useState(false);
@@ -158,14 +166,14 @@ export default function App() {
     }
   }
 
-  function selectPhoto(source: "camera" | "library") {
+  function selectPhoto(source: "camera" | "library", recordDay = localDate()) {
     void run(async () => {
       setPicking(true);
       try {
         const photo = await pickPhoto(source);
         if (photo) {
           setNote("");
-          navigate({ step: "preview", photo });
+          navigate({ step: "preview", photo, recordDay });
         }
       } finally {
         setPicking(false);
@@ -189,6 +197,7 @@ export default function App() {
         photo,
         result: await analyzePhoto(photo, note),
         id: newId(),
+        recordDay: screen.recordDay,
       });
     });
   }
@@ -258,7 +267,10 @@ export default function App() {
                 onScan={() => selectPhoto("camera")}
                 onLibrary={() => selectPhoto("library")}
                 onProfile={() => navigate({ step: "profile" })}
-                onJournal={() => navigate({ step: "journal" })}
+                onJournal={() => {
+                  setJournalDay(null);
+                  navigate({ step: "journal" });
+                }}
               />
             )}
             {screen.step === "recipe" && (
@@ -368,9 +380,21 @@ export default function App() {
                 )}
                 <JournalScreen
                   meals={meals}
-                  day={day}
+                  day={journalDay ?? day}
+                  today={day}
+                  onDay={(date) => {
+                    setJournalDay(date === day ? null : date);
+                    setError(null);
+                  }}
+                  onManual={() =>
+                    navigate({
+                      step: "manualMeal",
+                      id: newId(),
+                      recordDay: journalDay ?? day,
+                    })
+                  }
                   busy={busy || !storageReady}
-                  onScan={() => navigate({ step: "home" })}
+                  onScan={() => selectPhoto("library", journalDay ?? day)}
                   onEdit={(meal) => navigate({ step: "editMeal", meal })}
                   onDelete={(meal) =>
                     run(async () => {
@@ -387,6 +411,40 @@ export default function App() {
                 />
               </>
             )}
+            {screen.step === "manualMeal" && (
+              <>
+                <Text style={styles.title}>식사 직접 기록</Text>
+                <Text style={styles.small}>{screen.recordDay}에 저장해요.</Text>
+                <FoodEditor
+                  busy={busy}
+                  items={[{ name: "", portion: "", kcal: 0 }]}
+                  confirmTitle="식사 기록 저장"
+                  onCancel={() => navigate({ step: "journal" })}
+                  onConfirm={(items) =>
+                    void run(async () => {
+                      if (!storageReady)
+                        throw new Error("기록을 먼저 불러와 주세요.");
+                      await saveMeal({
+                        id: screen.id,
+                        title: items
+                          .map((item) => item.name)
+                          .join(" · ")
+                          .slice(0, 100),
+                        createdAt: Date.now(),
+                        localDate: screen.recordDay,
+                        items,
+                        deletedAt: null,
+                      });
+                      await refreshMeals();
+                      setJournalDay(
+                        screen.recordDay === day ? null : screen.recordDay,
+                      );
+                      navigate({ step: "journal" });
+                    })
+                  }
+                />
+              </>
+            )}
             {screen.step === "editMeal" && (
               <FoodEditor
                 busy={busy}
@@ -396,7 +454,7 @@ export default function App() {
                   void run(async () => {
                     await updateMeal({ ...screen.meal, items });
                     await refreshMeals();
-                    navigate({ step: "today" });
+                    navigate({ step: "journal" });
                   })
                 }
               />
@@ -414,16 +472,22 @@ export default function App() {
               <PreviewScreen
                 mode={mode}
                 photo={screen.photo}
+                recordDay={screen.recordDay}
                 note={note}
                 onNote={setNote}
                 busy={busy}
                 onAnalyze={analyze}
-                onBack={() => navigate({ step: "home" })}
+                onBack={() =>
+                  navigate({
+                    step: screen.recordDay === day ? "today" : "journal",
+                  })
+                }
               />
             )}
             {screen.step === "result" && (
               <ResultScreen
                 photo={screen.photo}
+                recordDay={screen.recordDay}
                 key={screen.id}
                 result={screen.result}
                 busy={busy}
@@ -444,17 +508,24 @@ export default function App() {
                       id: screen.id,
                       title: screen.result.title,
                       createdAt: Date.now(),
-                      localDate: localDate(),
+                      localDate: screen.recordDay,
                       items,
                       deletedAt: null,
                     });
                     await refreshMeals();
-                    navigate({ step: "today" });
+                    setJournalDay(
+                      screen.recordDay === day ? null : screen.recordDay,
+                    );
+                    navigate({
+                      step: screen.recordDay === day ? "today" : "journal",
+                    });
                   })
                 }
                 onReset={() => {
                   setNote("");
-                  navigate({ step: "home" });
+                  navigate({
+                    step: screen.recordDay === day ? "today" : "journal",
+                  });
                 }}
               />
             )}

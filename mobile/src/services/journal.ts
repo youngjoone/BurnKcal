@@ -1,4 +1,4 @@
-import { Meal, parseMeal } from "../domain/journal";
+import { Meal, parseMeal, localDate } from "../domain/journal";
 import { insertEntry, listEntries, writeEntry } from "./database";
 export async function loadMeals(): Promise<Meal[]> {
   return (await listEntries("meal."))
@@ -7,6 +7,8 @@ export async function loadMeals(): Promise<Meal[]> {
 }
 export async function saveMeal(meal: Meal): Promise<void> {
   const valid = parseMeal(meal);
+  if (valid.localDate > localDate())
+    throw new Error("미래 날짜에는 식사를 기록할 수 없어요.");
   await insertEntry(`meal.${valid.id}`, JSON.stringify(valid));
 }
 export async function updateMeal(meal: Meal): Promise<void> {

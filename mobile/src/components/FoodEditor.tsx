@@ -16,12 +16,14 @@ type Props = {
   onConfirm: (items: Food[]) => void;
   onCancel: () => void;
   busy?: boolean;
+  confirmTitle?: string;
 };
 export function FoodEditor({
   items,
   onConfirm,
   onCancel,
   busy = false,
+  confirmTitle = "수정 적용",
 }: Props) {
   const [drafts, setDrafts] = useState(() => draftFoods(items));
   const [error, setError] = useState("");
@@ -125,7 +127,7 @@ export function FoodEditor({
         </Text>
       )}
       <Button
-        title="수정 적용"
+        title={confirmTitle}
         disabled={busy}
         loading={busy}
         onPress={() => {
