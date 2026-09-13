@@ -1,3 +1,6 @@
+import { useState } from "react";
+import { FoodEditor } from "../components/FoodEditor";
+import { foodTotal } from "../domain/food";
 import { Image, Text, View, StyleSheet } from "react-native";
 import { AnalysisResult, MealPhoto } from "../types/analysis";
 import { Button } from "../components/Button";
@@ -8,6 +11,21 @@ type Props = { photo: MealPhoto; result: AnalysisResult; onReset: () => void };
 
 export function ResultScreen({ photo, result, onReset }: Props) {
   const demo = result.mode === "demo";
+  const [items, setItems] = useState(result.items);
+  const [editing, setEditing] = useState(false);
+  const [edited, setEdited] = useState(false);
+  if (editing)
+    return (
+      <FoodEditor
+        items={items}
+        onConfirm={(foods) => {
+          setItems(foods);
+          setEdited(true);
+          setEditing(false);
+        }}
+        onCancel={() => setEditing(false)}
+      />
+    );
   return (
     <>
       <View style={{ gap: 6 }}>
@@ -25,24 +43,31 @@ export function ResultScreen({ photo, result, onReset }: Props) {
         <View style={styles.row}>
           <Text style={s.summaryLabel}>총 예상 칼로리</Text>
           <Text style={s.summaryLabel}>
-            {result.items.length}개 음식 · {demo ? "예시" : "AI 추정"}
+            {items.length}개 음식 · {demo ? "예시" : "AI 추정"}
           </Text>
         </View>
         <View style={s.totalRow}>
-          <Text style={s.total}>{result.totalKcal.toLocaleString()}</Text>
+          <Text style={s.total}>{foodTotal(items).toLocaleString()}</Text>
           <Text style={s.unit}>kcal</Text>
         </View>
-        <Text style={s.range}>
-          {demo ? "예시 범위" : "예상 범위"} {result.range.min.toLocaleString()}
-          –{result.range.max.toLocaleString()} kcal
-        </Text>
+        {edited ? (
+          <Text style={s.range}>
+            먹은 양을 수정한 값 · 실제 영양값과 다를 수 있어요
+          </Text>
+        ) : (
+          <Text style={s.range}>
+            {demo ? "예시 범위" : "예상 범위"}{" "}
+            {result.range.min.toLocaleString()}–
+            {result.range.max.toLocaleString()} kcal
+          </Text>
+        )}
       </View>
       <View style={{ gap: 4 }}>
         <View style={[styles.row, { paddingBottom: 8 }]}>
           <Text style={styles.label}>음식별 분석</Text>
           <Text style={styles.small}>추정량 기준</Text>
         </View>
-        {result.items.map((item, index) => (
+        {items.map((item, index) => (
           <View key={`${item.name}-${index}`} style={s.foodRow}>
             <Text style={s.index}>{String(index + 1).padStart(2, "0")}</Text>
             <View style={{ flex: 1, gap: 5 }}>
@@ -64,6 +89,11 @@ export function ResultScreen({ photo, result, onReset }: Props) {
           </Text>
         ))}
       </View>
+      <Button
+        title="음식·먹은 양 수정"
+        secondary
+        onPress={() => setEditing(true)}
+      />
       <Button title="다른 식사 분석하기" onPress={onReset} />
     </>
   );
