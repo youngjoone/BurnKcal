@@ -32,7 +32,8 @@
           "cameraPermission": "칼로리를 확인할 음식 사진을 촬영합니다.",
           "microphonePermission": false
         }
-      ]
+      ],
+      "expo-sqlite"
     ],
     "web": {
       "favicon": "./assets/favicon.png"
