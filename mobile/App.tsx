@@ -1,3 +1,4 @@
+import { SettingsScreen } from "./src/screens/SettingsScreen";
 import { Preferences } from "./src/domain/recommendations";
 import { Recipe } from "./src/data/recipes";
 import { loadPreferences, savePreferences } from "./src/services/preferences";
@@ -37,6 +38,9 @@ type Screen =
   | { step: "preferences" }
   | { step: "recipe"; recipe: Recipe }
   | { step: "today" }
+  | { step: "loading" }
+  | { step: "onboarding" }
+  | { step: "settings" }
   | { step: "profile" }
   | { step: "journal" }
   | { step: "editMeal"; meal: Meal }
@@ -44,7 +48,7 @@ type Screen =
   | { step: "result"; photo: MealPhoto; result: AnalysisResult; id: string };
 
 export default function App() {
-  const [screen, setScreen] = useState<Screen>({ step: "today" });
+  const [screen, setScreen] = useState<Screen>({ step: "loading" });
   const [preferences, setPreferences] = useState<Preferences | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [profileReady, setProfileReady] = useState(false);
@@ -89,6 +93,7 @@ export default function App() {
         if (active) {
           setProfile(value);
           setProfileReady(true);
+          setScreen({ step: value ? "today" : "onboarding" });
         }
       })
       .catch(() => {
@@ -217,7 +222,7 @@ export default function App() {
                     color: colors.muted,
                   }}
                 >
-                  사진 분석
+                  식단 관리
                 </Text>
               </View>
             </View>
@@ -230,13 +235,13 @@ export default function App() {
                 <Text style={styles.errorText}>{error}</Text>
               </View>
             )}
-            {["today", "journal", "profile"].includes(screen.step) && (
+            {["today", "journal", "settings"].includes(screen.step) && (
               <View style={{ flexDirection: "row", gap: 8 }}>
                 {(
                   [
                     { step: "today", title: "오늘" },
                     { step: "journal", title: "기록" },
-                    { step: "profile", title: "내 정보" },
+                    { step: "settings", title: "설정" },
                   ] as const
                 ).map((tab) => (
                   <View key={tab.step} style={{ flex: 1 }}>
@@ -303,15 +308,56 @@ export default function App() {
                   }
                 />
               ))}
-            {screen.step === "profile" &&
+            {screen.step === "loading" && (
+              <View style={styles.stack}>
+                <Text style={styles.title}>식사 기록을 준비하고 있어요.</Text>
+                <Button
+                  title="다시 불러오기"
+                  disabled={busy}
+                  onPress={() =>
+                    void run(async () => {
+                      const value = await loadProfile();
+                      setProfile(value);
+                      setProfileReady(true);
+                      await refreshMeals();
+                      setPreferences(await loadPreferences());
+                      navigate({ step: value ? "today" : "onboarding" });
+                    })
+                  }
+                />
+              </View>
+            )}
+            {screen.step === "settings" && (
+              <SettingsScreen
+                profile={profile}
+                preferences={preferences}
+                onProfile={() => navigate({ step: "profile" })}
+                onPreferences={() => navigate({ step: "preferences" })}
+              />
+            )}
+            {(screen.step === "profile" || screen.step === "onboarding") &&
               (profileReady ? (
                 <ProfileScreen
+                  key={screen.step}
                   profile={profile}
                   busy={busy}
+                  onboarding={screen.step === "onboarding"}
+                  onScrollTop={() =>
+                    scroll.current?.scrollTo({ y: 0, animated: false })
+                  }
+                  onCancel={
+                    screen.step === "profile"
+                      ? () => navigate({ step: "settings" })
+                      : undefined
+                  }
                   onSave={(value) =>
                     run(async () => {
                       await saveProfile(value);
                       setProfile(value);
+                      navigate({
+                        step:
+                          screen.step === "onboarding" ? "today" : "settings",
+                      });
                     })
                   }
                 />
@@ -427,7 +473,7 @@ export default function App() {
                 }}
               />
             )}
-            {__DEV__ && screen.step === "home" && (
+            {__DEV__ && screen.step === "settings" && (
               <View
                 style={[
                   styles.stack,

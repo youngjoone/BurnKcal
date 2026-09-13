@@ -71,3 +71,7 @@ Gemini 프롬프트·JSON 스키마는 `backend/src/main/resources/gemini/`에�
 ### 목표와 레시피
 
 `domain/profile.ts`가 신체 입력 검증·대사량 추정·자동 목표 제외 조건을, `services/profile.ts`가 기기 저장을 담당합니다. 계산 근거와 제품 정책은 [CALORIE_TARGETS.md](CALORIE_TARGETS.md)에 있습니다. `data/recipes.ts`는 1인분 레시피 6종의 재료·순서·추정 칼로리입니다. `domain/recommendations.ts`가 남은 칼로리·제외 재료·시간 조건으로 후보를 고릅니다. 조건에 맞지 않는 알레르기 재료를 임의로 허용하지 않습니다. 단, 식품 성분표·교차 접촉을 판별하지는 못합니다. `services/preferences.ts`가 설정을 저장합니다.
+
+### 첫 실행과 설정
+
+신체 정보가 없으면 `ProfileScreen`에서 신체/목표 → 생활 정보 → 계산 결과 확인의 3단계를 먼저 보여줍니다. 최종 저장 후 Today로 이동하며 재실행 시 정보를 다시 요구하지 않습니다. 이후 수정은 `SettingsScreen`에서 시작합니다. 목표 계산 대상이 아니어도 기록 기능은 이용할 수 있습니다.

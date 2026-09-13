@@ -23,7 +23,7 @@ export function Choices<T extends string>({
             key={option.value}
             accessibilityRole="radio"
             accessibilityLabel={`${label}: ${option.label}`}
-            accessibilityState={{ selected: value === option.value, disabled }}
+            accessibilityState={{ checked: value === option.value, disabled }}
             disabled={disabled}
             onPress={() => onChange(option.value)}
             style={{
