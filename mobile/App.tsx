@@ -1,3 +1,7 @@
+import { Profile } from "./src/domain/profile";
+import { loadProfile, saveProfile } from "./src/services/profile";
+import { ProfileScreen } from "./src/screens/ProfileScreen";
+import { TodayScreen } from "./src/screens/TodayScreen";
 import { Meal, localDate } from "./src/domain/journal";
 import { newId } from "./src/domain/food";
 import { loadMeals, saveMeal, updateMeal } from "./src/services/journal";
@@ -25,13 +29,17 @@ import { colors, styles } from "./src/theme";
 
 type Screen =
   | { step: "home" }
+  | { step: "today" }
+  | { step: "profile" }
   | { step: "journal" }
   | { step: "editMeal"; meal: Meal }
   | { step: "preview"; photo: MealPhoto }
   | { step: "result"; photo: MealPhoto; result: AnalysisResult; id: string };
 
 export default function App() {
-  const [screen, setScreen] = useState<Screen>({ step: "home" });
+  const [screen, setScreen] = useState<Screen>({ step: "today" });
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [profileReady, setProfileReady] = useState(false);
   const [meals, setMeals] = useState<Meal[]>([]);
   const [storageReady, setStorageReady] = useState(false);
   const [day, setDay] = useState(localDate());
@@ -58,6 +66,19 @@ export default function App() {
 
   useEffect(() => {
     let active = true;
+    loadProfile()
+      .then((value) => {
+        if (active) {
+          setProfile(value);
+          setProfileReady(true);
+        }
+      })
+      .catch(() => {
+        if (active)
+          setError(
+            "내 정보를 읽지 못했어요. 내 정보 화면에서 다시 시도해 주세요.",
+          );
+      });
     loadMeals()
       .then((value) => {
         if (active) {
@@ -191,26 +212,69 @@ export default function App() {
                 <Text style={styles.errorText}>{error}</Text>
               </View>
             )}
-            {(screen.step === "home" || screen.step === "journal") && (
-              <View style={styles.row}>
-                <View style={{ flex: 1 }}>
-                  <Button
-                    title="사진 분석"
-                    secondary={screen.step !== "home"}
-                    disabled={busy}
-                    onPress={() => navigate({ step: "home" })}
-                  />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Button
-                    title="식사 기록"
-                    secondary={screen.step !== "journal"}
-                    disabled={busy}
-                    onPress={() => navigate({ step: "journal" })}
-                  />
-                </View>
+            {["today", "journal", "profile"].includes(screen.step) && (
+              <View style={{ flexDirection: "row", gap: 8 }}>
+                {(
+                  [
+                    { step: "today", title: "오늘" },
+                    { step: "journal", title: "기록" },
+                    { step: "profile", title: "내 정보" },
+                  ] as const
+                ).map((tab) => (
+                  <View key={tab.step} style={{ flex: 1 }}>
+                    <Button
+                      title={tab.title}
+                      secondary={screen.step !== tab.step}
+                      disabled={busy}
+                      onPress={() => navigate({ step: tab.step })}
+                    />
+                  </View>
+                ))}
               </View>
             )}
+            {screen.step === "home" && (
+              <Button
+                title="오늘 화면으로"
+                secondary
+                disabled={busy}
+                onPress={() => navigate({ step: "today" })}
+              />
+            )}
+            {screen.step === "today" && (
+              <TodayScreen
+                meals={meals}
+                profile={profile}
+                day={day}
+                ready={storageReady && profileReady}
+                onScan={() => navigate({ step: "home" })}
+                onProfile={() => navigate({ step: "profile" })}
+                onJournal={() => navigate({ step: "journal" })}
+              />
+            )}
+            {screen.step === "profile" &&
+              (profileReady ? (
+                <ProfileScreen
+                  profile={profile}
+                  busy={busy}
+                  onSave={(value) =>
+                    run(async () => {
+                      await saveProfile(value);
+                      setProfile(value);
+                    })
+                  }
+                />
+              ) : (
+                <Button
+                  title="내 정보 다시 불러오기"
+                  disabled={busy}
+                  onPress={() =>
+                    void run(async () => {
+                      setProfile(await loadProfile());
+                      setProfileReady(true);
+                    })
+                  }
+                />
+              ))}
             {screen.step === "journal" && (
               <>
                 {!storageReady && (
@@ -249,7 +313,7 @@ export default function App() {
                   void run(async () => {
                     await updateMeal({ ...screen.meal, items });
                     await refreshMeals();
-                    navigate({ step: "journal" });
+                    navigate({ step: "today" });
                   })
                 }
               />
@@ -302,7 +366,7 @@ export default function App() {
                       deletedAt: null,
                     });
                     await refreshMeals();
-                    navigate({ step: "journal" });
+                    navigate({ step: "today" });
                   })
                 }
                 onReset={() => {
