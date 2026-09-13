@@ -1,5 +1,11 @@
+import { Meal, localDate } from "./src/domain/journal";
+import { newId } from "./src/domain/food";
+import { loadMeals, saveMeal, updateMeal } from "./src/services/journal";
+import { JournalScreen } from "./src/screens/JournalScreen";
+import { FoodEditor } from "./src/components/FoodEditor";
 import { useEffect, useRef, useState } from "react";
 import {
+  AppState,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -19,11 +25,16 @@ import { colors, styles } from "./src/theme";
 
 type Screen =
   | { step: "home" }
+  | { step: "journal" }
+  | { step: "editMeal"; meal: Meal }
   | { step: "preview"; photo: MealPhoto }
-  | { step: "result"; photo: MealPhoto; result: AnalysisResult };
+  | { step: "result"; photo: MealPhoto; result: AnalysisResult; id: string };
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>({ step: "home" });
+  const [meals, setMeals] = useState<Meal[]>([]);
+  const [storageReady, setStorageReady] = useState(false);
+  const [day, setDay] = useState(localDate());
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
   const [picking, setPicking] = useState(false);
@@ -45,6 +56,37 @@ export default function App() {
     };
   }, []);
 
+  useEffect(() => {
+    let active = true;
+    loadMeals()
+      .then((value) => {
+        if (active) {
+          setMeals(value);
+          setStorageReady(true);
+        }
+      })
+      .catch(() => {
+        if (active)
+          setError(
+            "기록을 읽지 못했어요. 앱을 다시 열거나 기록 화면에서 다시 시도해 주세요.",
+          );
+      });
+    const tick = () => setDay(localDate());
+    const timer = setInterval(tick, 30_000);
+    const subscription = AppState.addEventListener("change", (state) => {
+      if (state === "active") tick();
+    });
+    return () => {
+      active = false;
+      clearInterval(timer);
+      subscription.remove();
+    };
+  }, []);
+  async function refreshMeals() {
+    setMeals(await loadMeals());
+    setStorageReady(true);
+  }
+
   function navigate(next: Screen) {
     setScreen(next);
     setError(null);
@@ -52,17 +94,19 @@ export default function App() {
   }
 
   async function run(action: () => Promise<void>) {
-    if (lock.current) return;
+    if (lock.current) return false;
     lock.current = true;
     setBusy(true);
     setError(null);
     try {
       await action();
+      return true;
     } catch (e) {
       setError(
         e instanceof Error ? e.message : "문제가 생겼어요. 다시 시도해 주세요.",
       );
       scroll.current?.scrollTo({ y: 0, animated: true });
+      return false;
     } finally {
       lock.current = false;
       setBusy(false);
@@ -99,6 +143,7 @@ export default function App() {
         step: "result",
         photo,
         result: await analyzePhoto(photo, note),
+        id: newId(),
       });
     });
   }
@@ -146,6 +191,69 @@ export default function App() {
                 <Text style={styles.errorText}>{error}</Text>
               </View>
             )}
+            {(screen.step === "home" || screen.step === "journal") && (
+              <View style={styles.row}>
+                <View style={{ flex: 1 }}>
+                  <Button
+                    title="사진 분석"
+                    secondary={screen.step !== "home"}
+                    disabled={busy}
+                    onPress={() => navigate({ step: "home" })}
+                  />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Button
+                    title="식사 기록"
+                    secondary={screen.step !== "journal"}
+                    disabled={busy}
+                    onPress={() => navigate({ step: "journal" })}
+                  />
+                </View>
+              </View>
+            )}
+            {screen.step === "journal" && (
+              <>
+                {!storageReady && (
+                  <Button
+                    title="기록 다시 불러오기"
+                    disabled={busy}
+                    onPress={() => void run(refreshMeals)}
+                  />
+                )}
+                <JournalScreen
+                  meals={meals}
+                  day={day}
+                  busy={busy || !storageReady}
+                  onScan={() => navigate({ step: "home" })}
+                  onEdit={(meal) => navigate({ step: "editMeal", meal })}
+                  onDelete={(meal) =>
+                    run(async () => {
+                      await updateMeal({ ...meal, deletedAt: Date.now() });
+                      await refreshMeals();
+                    })
+                  }
+                  onRestore={(meal) =>
+                    run(async () => {
+                      await updateMeal({ ...meal, deletedAt: null });
+                      await refreshMeals();
+                    })
+                  }
+                />
+              </>
+            )}
+            {screen.step === "editMeal" && (
+              <FoodEditor
+                items={screen.meal.items}
+                onCancel={() => navigate({ step: "journal" })}
+                onConfirm={(items) =>
+                  void run(async () => {
+                    await updateMeal({ ...screen.meal, items });
+                    await refreshMeals();
+                    navigate({ step: "journal" });
+                  })
+                }
+              />
+            )}
             {screen.step === "home" && (
               <HomeScreen
                 mode={mode}
@@ -169,7 +277,34 @@ export default function App() {
             {screen.step === "result" && (
               <ResultScreen
                 photo={screen.photo}
+                key={screen.id}
                 result={screen.result}
+                busy={busy}
+                onScrollTop={() =>
+                  scroll.current?.scrollTo({ y: 0, animated: false })
+                }
+                onSave={(items) =>
+                  void run(async () => {
+                    if (!storageReady)
+                      throw new Error(
+                        "기록을 먼저 불러와 주세요. 식사 기록 화면에서 다시 시도할 수 있어요.",
+                      );
+                    if (screen.result.mode !== "ai")
+                      throw new Error(
+                        "데모 결과는 실제 식사 기록에 저장할 수 없어요.",
+                      );
+                    await saveMeal({
+                      id: screen.id,
+                      title: screen.result.title,
+                      createdAt: Date.now(),
+                      localDate: localDate(),
+                      items,
+                      deletedAt: null,
+                    });
+                    await refreshMeals();
+                    navigate({ step: "journal" });
+                  })
+                }
                 onReset={() => {
                   setNote("");
                   navigate({ step: "home" });

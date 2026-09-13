@@ -1,15 +1,29 @@
 import { useState } from "react";
 import { FoodEditor } from "../components/FoodEditor";
-import { foodTotal } from "../domain/food";
+import { foodTotal, Food } from "../domain/food";
 import { Image, Text, View, StyleSheet } from "react-native";
 import { AnalysisResult, MealPhoto } from "../types/analysis";
 import { Button } from "../components/Button";
 import { DemoNotice } from "../components/DemoNotice";
 import { colors, styles } from "../theme";
 
-type Props = { photo: MealPhoto; result: AnalysisResult; onReset: () => void };
+type Props = {
+  photo: MealPhoto;
+  result: AnalysisResult;
+  busy: boolean;
+  onSave: (items: Food[]) => void;
+  onScrollTop: () => void;
+  onReset: () => void;
+};
 
-export function ResultScreen({ photo, result, onReset }: Props) {
+export function ResultScreen({
+  photo,
+  result,
+  busy,
+  onSave,
+  onScrollTop,
+  onReset,
+}: Props) {
   const demo = result.mode === "demo";
   const [items, setItems] = useState(result.items);
   const [editing, setEditing] = useState(false);
@@ -22,6 +36,7 @@ export function ResultScreen({ photo, result, onReset }: Props) {
           setItems(foods);
           setEdited(true);
           setEditing(false);
+          onScrollTop();
         }}
         onCancel={() => setEditing(false)}
       />
@@ -92,9 +107,26 @@ export function ResultScreen({ photo, result, onReset }: Props) {
       <Button
         title="음식·먹은 양 수정"
         secondary
-        onPress={() => setEditing(true)}
+        disabled={busy}
+        onPress={() => {
+          setEditing(true);
+          onScrollTop();
+        }}
       />
-      <Button title="다른 식사 분석하기" onPress={onReset} />
+      {!demo && (
+        <Button
+          title="먹은 양 확인 · 식사 저장"
+          disabled={busy}
+          loading={busy}
+          onPress={() => onSave(items)}
+        />
+      )}
+      <Button
+        title="다른 식사 분석하기"
+        secondary
+        disabled={busy}
+        onPress={onReset}
+      />
     </>
   );
 }
