@@ -1,3 +1,8 @@
+import { Preferences } from "./src/domain/recommendations";
+import { Recipe } from "./src/data/recipes";
+import { loadPreferences, savePreferences } from "./src/services/preferences";
+import { PreferencesScreen } from "./src/screens/PreferencesScreen";
+import { RecipeScreen } from "./src/screens/RecipeScreen";
 import { Profile } from "./src/domain/profile";
 import { loadProfile, saveProfile } from "./src/services/profile";
 import { ProfileScreen } from "./src/screens/ProfileScreen";
@@ -29,6 +34,8 @@ import { colors, styles } from "./src/theme";
 
 type Screen =
   | { step: "home" }
+  | { step: "preferences" }
+  | { step: "recipe"; recipe: Recipe }
   | { step: "today" }
   | { step: "profile" }
   | { step: "journal" }
@@ -38,6 +45,7 @@ type Screen =
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>({ step: "today" });
+  const [preferences, setPreferences] = useState<Preferences | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [profileReady, setProfileReady] = useState(false);
   const [meals, setMeals] = useState<Meal[]>([]);
@@ -66,6 +74,16 @@ export default function App() {
 
   useEffect(() => {
     let active = true;
+    loadPreferences()
+      .then((value) => {
+        if (active) setPreferences(value);
+      })
+      .catch(() => {
+        if (active)
+          setError(
+            "추천 설정을 읽지 못했어요. 제외 식재료를 확인할 때까지 추천을 표시하지 않아요.",
+          );
+      });
     loadProfile()
       .then((value) => {
         if (active) {
@@ -246,11 +264,45 @@ export default function App() {
                 profile={profile}
                 day={day}
                 ready={storageReady && profileReady}
+                preferences={preferences}
+                onRecipe={(recipe) => navigate({ step: "recipe", recipe })}
+                onPreferences={() => navigate({ step: "preferences" })}
                 onScan={() => navigate({ step: "home" })}
                 onProfile={() => navigate({ step: "profile" })}
                 onJournal={() => navigate({ step: "journal" })}
               />
             )}
+            {screen.step === "recipe" && (
+              <RecipeScreen
+                recipe={screen.recipe}
+                onBack={() => navigate({ step: "today" })}
+              />
+            )}
+            {screen.step === "preferences" &&
+              (preferences ? (
+                <PreferencesScreen
+                  preferences={preferences}
+                  busy={busy}
+                  onSave={(value) =>
+                    void run(async () => {
+                      await savePreferences(value);
+                      setPreferences(value);
+                      navigate({ step: "today" });
+                    })
+                  }
+                  onBack={() => navigate({ step: "today" })}
+                />
+              ) : (
+                <Button
+                  title="추천 설정 다시 불러오기"
+                  disabled={busy}
+                  onPress={() =>
+                    void run(async () =>
+                      setPreferences(await loadPreferences()),
+                    )
+                  }
+                />
+              ))}
             {screen.step === "profile" &&
               (profileReady ? (
                 <ProfileScreen

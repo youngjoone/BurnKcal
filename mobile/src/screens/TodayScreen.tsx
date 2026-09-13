@@ -1,3 +1,6 @@
+import { MealRecommendations } from "../components/MealRecommendations";
+import { Preferences } from "../domain/recommendations";
+import { Recipe } from "../data/recipes";
 import { Text, View } from "react-native";
 import { Meal, dailyTotal } from "../domain/journal";
 import { Profile, caloriePlan } from "../domain/profile";
@@ -8,6 +11,9 @@ type Props = {
   profile: Profile | null;
   day: string;
   ready: boolean;
+  preferences: Preferences | null;
+  onRecipe: (recipe: Recipe) => void;
+  onPreferences: () => void;
   onScan: () => void;
   onProfile: () => void;
   onJournal: () => void;
@@ -17,6 +23,9 @@ export function TodayScreen({
   profile,
   day,
   ready,
+  preferences,
+  onRecipe,
+  onPreferences,
   onScan,
   onProfile,
   onJournal,
@@ -111,6 +120,22 @@ export function TodayScreen({
         secondary
         onPress={onJournal}
       />
+      {!!goal &&
+        ready &&
+        (preferences ? (
+          <MealRecommendations
+            remaining={goal - consumed}
+            preferences={preferences}
+            onRecipe={onRecipe}
+            onPreferences={onPreferences}
+          />
+        ) : (
+          <Button
+            title="추천 설정 불러오기"
+            secondary
+            onPress={onPreferences}
+          />
+        ))}
     </>
   );
 }
