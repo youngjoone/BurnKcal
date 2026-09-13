@@ -1,4 +1,4 @@
-import { Image, Text, View } from "react-native";
+import { Image, Text, View, StyleSheet } from "react-native";
 import { AnalysisResult, MealPhoto } from "../types/analysis";
 import { Button } from "../components/Button";
 import { DemoNotice } from "../components/DemoNotice";
@@ -10,11 +10,9 @@ export function ResultScreen({ photo, result, onReset }: Props) {
   const demo = result.mode === "demo";
   return (
     <>
-      <View style={styles.stack}>
-        <Text style={styles.tag}>02 / {demo ? "예시 결과" : "분석 결과"}</Text>
-        <Text style={styles.title}>
-          {demo ? "이렇게 보여드려요." : "한 끼를 확인했어요."}
-        </Text>
+      <View style={{ gap: 6 }}>
+        <Text style={styles.tag}>{demo ? "예시 결과" : "분석 완료"}</Text>
+        <Text style={styles.title}>{result.title}</Text>
       </View>
       {demo && <DemoNotice />}
       <Image
@@ -23,74 +21,85 @@ export function ResultScreen({ photo, result, onReset }: Props) {
         resizeMode="contain"
         accessibilityLabel="전송한 음식 사진"
       />
-      <View style={styles.card}>
+      <View style={s.summary}>
         <View style={styles.row}>
-          <Text style={styles.label}>{result.title}</Text>
-          <Text style={styles.small}>
-            총 {result.items.length}개 음식{demo ? " · 예시" : ""}
+          <Text style={s.summaryLabel}>총 예상 칼로리</Text>
+          <Text style={s.summaryLabel}>
+            {result.items.length}개 음식 · {demo ? "예시" : "AI 추정"}
           </Text>
         </View>
-        <View style={{ flexDirection: "row", alignItems: "baseline", gap: 8 }}>
-          <Text
-            style={{
-              fontSize: 54,
-              fontWeight: "800",
-              color: colors.primary,
-              letterSpacing: -2,
-            }}
-          >
-            {result.totalKcal.toLocaleString()}
-          </Text>
-          <Text style={styles.subtitle}>
-            kcal{demo ? " (예시)" : " (추정)"}
-          </Text>
+        <View style={s.totalRow}>
+          <Text style={s.total}>{result.totalKcal.toLocaleString()}</Text>
+          <Text style={s.unit}>kcal</Text>
         </View>
-        <Text style={styles.small}>
-          {demo ? "예시 범위" : "예상 범위"} {result.range.min}–
-          {result.range.max} kcal
+        <Text style={s.range}>
+          {demo ? "예시 범위" : "예상 범위"} {result.range.min.toLocaleString()}
+          –{result.range.max.toLocaleString()} kcal
         </Text>
       </View>
-      <View style={styles.stack}>
-        <View style={styles.row}>
-          <Text style={styles.label}>음식별 칼로리</Text>
-          <Text style={styles.small}>{demo ? "예시 구성" : "추정량 기준"}</Text>
+      <View style={{ gap: 4 }}>
+        <View style={[styles.row, { paddingBottom: 8 }]}>
+          <Text style={styles.label}>음식별 분석</Text>
+          <Text style={styles.small}>추정량 기준</Text>
         </View>
         {result.items.map((item, index) => (
-          <View key={`${item.name}-${index}`} style={[styles.card, styles.row]}>
-            <View
-              style={{
-                width: 36,
-                height: 36,
-                borderRadius: 12,
-                backgroundColor: colors.pale,
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <Text
-                style={{
-                  color: colors.primary,
-                  fontSize: 12,
-                  fontWeight: "700",
-                }}
-              >
-                {String(index + 1).padStart(2, "0")}
-              </Text>
-            </View>
-            <View style={{ flex: 1, gap: 4 }}>
+          <View key={`${item.name}-${index}`} style={s.foodRow}>
+            <Text style={s.index}>{String(index + 1).padStart(2, "0")}</Text>
+            <View style={{ flex: 1, gap: 5 }}>
               <Text style={styles.label}>{item.name}</Text>
               <Text style={styles.small}>{item.portion}</Text>
             </View>
-            <Text style={styles.label}>{item.kcal} kcal</Text>
+            <View style={{ alignItems: "flex-end", gap: 3 }}>
+              <Text style={s.foodKcal}>{item.kcal}</Text>
+              <Text style={s.kcalLabel}>kcal</Text>
+            </View>
           </View>
         ))}
       </View>
-      {result.notices.map((notice, index) => (
-        <Text key={index} style={styles.small}>
-          {notice}
-        </Text>
-      ))}
-      <Button title="다른 한 끼 찍기" onPress={onReset} />
+      <View style={[styles.stack, { gap: 8 }]}>
+        <Text style={styles.small}>분석 참고사항</Text>
+        {result.notices.map((notice, index) => (
+          <Text key={index} style={[styles.small, { fontSize: 12 }]}>
+            {notice}
+          </Text>
+        ))}
+      </View>
+      <Button title="다른 식사 분석하기" onPress={onReset} />
     </>
   );
 }
+const s = StyleSheet.create({
+  summary: {
+    padding: 22,
+    gap: 10,
+    borderRadius: 20,
+    backgroundColor: "#202328",
+  },
+  summaryLabel: { fontSize: 12, color: "#C1C6CF" },
+  totalRow: { flexDirection: "row", alignItems: "baseline", gap: 8 },
+  total: {
+    fontSize: 54,
+    fontWeight: "700",
+    letterSpacing: -2.5,
+    color: colors.accent,
+    fontVariant: ["tabular-nums"],
+  },
+  unit: { fontSize: 17, color: "#E8EAEE" },
+  range: { fontSize: 12, color: "#A6ADB7" },
+  foodRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+    paddingVertical: 18,
+    borderBottomWidth: 1,
+    borderColor: colors.border,
+  },
+  index: { fontSize: 11, color: colors.muted },
+  foodKcal: {
+    color: colors.text,
+    fontWeight: "600",
+    fontSize: 19,
+    fontVariant: ["tabular-nums"],
+  },
+  kcalLabel: { color: colors.muted, fontSize: 10 },
+});

@@ -109,3 +109,13 @@ npm run web
 | 8080 사용 중 | `SERVER_PORT=8082 ./mvnw spring-boot:run`, 앱 API 주소도 8082로 변경 |
 
 앱 독립 설치와 서버 운영은 별도입니다. 서버가 Mac에 있으면 분석 시 Mac과 서버가 켜져 있어야 합니다.
+
+### Simulator가 로컬 개발 서버에 연결되지 않을 때
+
+Metro가 IPv6 localhost에만 바인딩되고 Expo Go는 127.0.0.1에 접근할 수 있습니다. 이 경우 기존 Metro를 종료하고 `mobile/`에서 다음처럼 실행합니다.
+
+```sh
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer NODE_OPTIONS=--dns-result-order=ipv4first npm run ios -- --port 8082 --localhost
+```
+
+2026-09-13 iPhone 17 Pro / iOS 26.5 Simulator에서 홈과 AI 모드 안내의 네이티브 렌더링을 확인했습니다. 실제 아이폰의 카메라·권한 검증은 별도입니다.

@@ -1,13 +1,14 @@
 import { StyleSheet } from "react-native";
 
 export const colors = {
-  background: "#F8F9F5",
+  background: "#F7F8FA",
+  accent: "#D7FA70",
   surface: "#FFFFFF",
-  text: "#182B23",
-  muted: "#65736B",
-  primary: "#226347",
-  pale: "#EAF1E8",
-  border: "#E0E7DE",
+  text: "#15171B",
+  muted: "#737981",
+  primary: "#15171B",
+  pale: "#ECEEF1",
+  border: "#E7E9ED",
   amber: "#89601B",
   amberBg: "#FFF4DB",
 };
@@ -31,7 +32,7 @@ export const styles = StyleSheet.create({
   },
   stack: { gap: 12 },
   brand: {
-    fontSize: 22,
+    fontSize: 23,
     fontWeight: "800",
     letterSpacing: -0.7,
     color: colors.primary,
@@ -43,19 +44,19 @@ export const styles = StyleSheet.create({
     fontWeight: "700",
   },
   title: {
-    fontSize: 34,
-    lineHeight: 45,
+    fontSize: 29,
+    lineHeight: 38,
     fontWeight: "800",
-    letterSpacing: -1.4,
+    letterSpacing: -1.1,
     color: colors.text,
   },
-  subtitle: { fontSize: 16, lineHeight: 25, color: colors.muted },
+  subtitle: { fontSize: 15, lineHeight: 24, color: colors.muted },
   label: { fontSize: 16, fontWeight: "700", color: colors.text },
   small: { fontSize: 13, lineHeight: 21, color: colors.muted },
   card: {
     backgroundColor: colors.surface,
-    borderRadius: 24,
-    padding: 22,
+    borderRadius: 20,
+    padding: 20,
     borderWidth: 1,
     borderColor: colors.border,
     gap: 16,
@@ -65,7 +66,7 @@ export const styles = StyleSheet.create({
   photo: {
     width: "100%",
     aspectRatio: 1.15,
-    borderRadius: 22,
+    borderRadius: 20,
     backgroundColor: colors.pale,
   },
   input: {

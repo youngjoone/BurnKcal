@@ -26,8 +26,8 @@ export function PreviewScreen({
   return (
     <>
       <View style={styles.stack}>
-        <Text style={styles.tag}>01 / 사진 확인</Text>
-        <Text style={styles.title}>이 한 끼,{"\n"}확인해 볼까요?</Text>
+        <Text style={styles.tag}>사진 확인</Text>
+        <Text style={styles.title}>분석할 사진을 확인해요.</Text>
       </View>
       <Image
         source={{ uri: photo.uri }}

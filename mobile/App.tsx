@@ -15,7 +15,7 @@ import { Button } from "./src/components/Button";
 import { API_URL, analyzePhoto, checkServer } from "./src/services/api";
 import { pickPhoto } from "./src/services/photos";
 import { AnalysisMode, AnalysisResult, MealPhoto } from "./src/types/analysis";
-import { styles } from "./src/theme";
+import { colors, styles } from "./src/theme";
 
 type Screen =
   | { step: "home" }
@@ -118,7 +118,24 @@ export default function App() {
           >
             <View style={styles.row}>
               <Text style={styles.brand}>BurnKcal</Text>
-              <Text style={styles.tag}>PHOTO → KCAL</Text>
+              <View
+                style={{
+                  backgroundColor: colors.pale,
+                  paddingHorizontal: 12,
+                  paddingVertical: 6,
+                  borderRadius: 20,
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 11,
+                    fontWeight: "600",
+                    color: colors.muted,
+                  }}
+                >
+                  사진 분석
+                </Text>
+              </View>
             </View>
             {error && (
               <View
@@ -160,8 +177,17 @@ export default function App() {
               />
             )}
             {__DEV__ && screen.step === "home" && (
-              <View style={styles.card}>
-                <Text style={styles.label}>개발 서버 연결</Text>
+              <View
+                style={[
+                  styles.stack,
+                  {
+                    borderTopWidth: 1,
+                    borderTopColor: colors.border,
+                    paddingTop: 16,
+                  },
+                ]}
+              >
+                <Text style={styles.small}>개발용 연결 설정</Text>
                 <Text selectable style={styles.small}>
                   {API_URL}
                 </Text>
