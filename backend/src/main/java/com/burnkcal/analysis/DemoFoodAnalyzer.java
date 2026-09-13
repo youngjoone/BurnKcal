@@ -8,7 +8,7 @@ import org.springframework.stereotype.Service;
 @ConditionalOnProperty(name = "burnkcal.analysis-mode", havingValue = "demo")
 public class DemoFoodAnalyzer implements FoodAnalyzer {
     @Override
-    public AnalysisResult analyze(byte[] image, String note) {
+    public AnalysisResult analyze(byte[] image, String contentType, String note) {
         var items = List.of(
                 new AnalysisResult.FoodItem("밥", "1공기 (예시)", 300),
                 new AnalysisResult.FoodItem("닭고기", "1인분 (예시)", 250),

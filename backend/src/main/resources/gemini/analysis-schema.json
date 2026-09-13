@@ -1,0 +1,25 @@
+{
+  "type": "object",
+  "properties": {
+    "status": {"type": "string", "enum": ["food", "not_food", "uncertain"]},
+    "title": {"type": "string"},
+    "items": {
+      "type": "array", "maxItems": 20,
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {"type": "string"},
+          "portion": {"type": "string"},
+          "kcal": {"type": "integer", "minimum": 0, "maximum": 10000},
+          "minKcal": {"type": "integer", "minimum": 0, "maximum": 10000},
+          "maxKcal": {"type": "integer", "minimum": 0, "maximum": 10000}
+        },
+        "required": ["name", "portion", "kcal", "minKcal", "maxKcal"],
+        "additionalProperties": false
+      }
+    },
+    "notices": {"type": "array", "maxItems": 8, "items": {"type": "string"}}
+  },
+  "required": ["status", "title", "items", "notices"],
+  "additionalProperties": false
+}

@@ -1,16 +1,24 @@
 import { Text, View, StyleSheet } from "react-native";
 import { Button } from "../components/Button";
-import { DemoNotice } from "../components/DemoNotice";
+import { AnalysisNotice } from "../components/AnalysisNotice";
+import { AnalysisMode } from "../types/analysis";
 import { colors, styles } from "../theme";
 
 type Props = {
+  mode: AnalysisMode | null;
   busy: boolean;
   picking: boolean;
   onCamera: () => void;
   onLibrary: () => void;
 };
 
-export function HomeScreen({ busy, picking, onCamera, onLibrary }: Props) {
+export function HomeScreen({
+  mode,
+  busy,
+  picking,
+  onCamera,
+  onLibrary,
+}: Props) {
   return (
     <>
       <View style={styles.stack}>
@@ -51,7 +59,7 @@ export function HomeScreen({ busy, picking, onCamera, onLibrary }: Props) {
           음식 전체가 보이도록 밝은 곳에서 찍어 주세요.
         </Text>
       </View>
-      <DemoNotice />
+      <AnalysisNotice mode={mode} />
     </>
   );
 }

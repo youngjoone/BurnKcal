@@ -1,10 +1,11 @@
 import { Image, Text, TextInput, View } from "react-native";
-import { MealPhoto } from "../types/analysis";
+import { MealPhoto, AnalysisMode } from "../types/analysis";
 import { Button } from "../components/Button";
-import { DemoNotice } from "../components/DemoNotice";
+import { AnalysisNotice } from "../components/AnalysisNotice";
 import { colors, styles } from "../theme";
 
 type Props = {
+  mode: AnalysisMode | null;
   photo: MealPhoto;
   note: string;
   onNote: (note: string) => void;
@@ -14,6 +15,7 @@ type Props = {
 };
 
 export function PreviewScreen({
+  mode,
   photo,
   note,
   onNote,
@@ -52,10 +54,16 @@ export function PreviewScreen({
           style={styles.input}
         />
       </View>
-      <DemoNotice />
+      <AnalysisNotice mode={mode} />
       <View style={styles.stack}>
         <Button
-          title={busy ? "서버에서 확인 중…" : "예시 분석 결과 보기"}
+          title={
+            busy
+              ? "음식별로 분석 중…"
+              : mode === "demo"
+                ? "예시 분석 결과 보기"
+                : "음식별 칼로리 분석"
+          }
           onPress={onAnalyze}
           loading={busy}
         />

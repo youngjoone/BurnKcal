@@ -13,7 +13,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@SpringBootTest
+@SpringBootTest(properties = {"burnkcal.analysis-mode=demo", "spring.config.import="})
 @AutoConfigureMockMvc
 class AnalysisApiTests {
     @Autowired

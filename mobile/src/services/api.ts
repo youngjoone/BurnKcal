@@ -1,5 +1,5 @@
 import { Platform } from "react-native";
-import { isAnalysisResult, MealPhoto } from "../types/analysis";
+import { isAnalysisResult, MealPhoto, AnalysisMode } from "../types/analysis";
 
 export const API_URL = (
   process.env.EXPO_PUBLIC_API_URL || "http://localhost:8080"
@@ -40,18 +40,21 @@ async function request(path: string, init?: RequestInit): Promise<unknown> {
   }
 }
 
-export async function checkServer() {
+export async function checkServer(): Promise<AnalysisMode> {
   const value = await request("/api/health");
   if (
     !value ||
     typeof value !== "object" ||
     !("status" in value) ||
-    value.status !== "ok"
+    value.status !== "ok" ||
+    !("analysisMode" in value) ||
+    (value.analysisMode !== "demo" && value.analysisMode !== "ai")
   ) {
     throw new Error(
       "서버 상태 응답을 확인할 수 없어요. API 주소를 확인해 주세요.",
     );
   }
+  return value.analysisMode;
 }
 
 export async function analyzePhoto(photo: MealPhoto, note: string) {

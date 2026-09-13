@@ -35,7 +35,7 @@ public class AnalysisController {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "음식 설명은 300자 이내로 입력해 주세요.");
         }
         validateImage(image);
-        return analyzer.analyze(image.getBytes(), note.trim());
+        return analyzer.analyze(image.getBytes(), image.getContentType(), note.trim());
     }
 
     private void validateImage(MultipartFile image) throws IOException {

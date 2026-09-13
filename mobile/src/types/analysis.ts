@@ -1,5 +1,7 @@
+export type AnalysisMode = "demo" | "ai";
+
 export type AnalysisResult = {
-  mode: "demo" | "ai";
+  mode: AnalysisMode;
   title: string;
   totalKcal: number;
   range: { min: number; max: number };
