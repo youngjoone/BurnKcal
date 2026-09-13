@@ -1,4 +1,4 @@
-import { Platform } from "react-native";
+import { uploadFile } from "./uploadFile";
 import { isAnalysisResult, MealPhoto, AnalysisMode } from "../types/analysis";
 
 export const API_URL = (
@@ -59,19 +59,7 @@ export async function checkServer(): Promise<AnalysisMode> {
 
 export async function analyzePhoto(photo: MealPhoto, note: string) {
   const form = new FormData();
-  if (Platform.OS === "web") {
-    const blob = await (await fetch(photo.uri)).blob();
-    if (blob.size > 5 * 1024 * 1024)
-      throw new Error("사진은 5MB 이하로 선택해 주세요.");
-    form.append("image", blob, "meal.jpg");
-  } else {
-    // React Native supports URI-backed files; the DOM type only describes Blob.
-    form.append("image", {
-      uri: photo.uri,
-      name: "meal.jpg",
-      type: "image/jpeg",
-    } as unknown as Blob);
-  }
+  form.append("image", await uploadFile(photo.uri), "meal.jpg");
   form.append("note", note.trim());
   // The runtime supplies Content-Type with the multipart boundary.
   const result = await request("/api/analyze", { method: "POST", body: form });
