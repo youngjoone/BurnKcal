@@ -1,3 +1,5 @@
+import { isCalendarDate } from "./dates";
+export { localDate } from "./dates";
 import { Food, confirmFoods, draftFoods, foodTotal } from "./food";
 export type Meal = {
   id: string;
@@ -7,9 +9,6 @@ export type Meal = {
   items: Food[];
   deletedAt: number | null;
 };
-export function localDate(date = new Date()) {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-}
 export function parseMeal(value: unknown): Meal {
   if (!value || typeof value !== "object")
     throw new Error("식사 기록 형식을 확인할 수 없어요.");
@@ -23,7 +22,7 @@ export function parseMeal(value: unknown): Meal {
     !Number.isSafeInteger(m.createdAt) ||
     m.createdAt <= 0 ||
     typeof m.localDate !== "string" ||
-    !/^\d{4}-\d{2}-\d{2}$/.test(m.localDate) ||
+    !isCalendarDate(m.localDate) ||
     (m.deletedAt !== null &&
       (!Number.isSafeInteger(m.deletedAt) || m.deletedAt <= 0)) ||
     !Array.isArray(m.items)
