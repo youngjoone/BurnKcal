@@ -15,8 +15,14 @@ type Props = {
   items: Food[];
   onConfirm: (items: Food[]) => void;
   onCancel: () => void;
+  busy?: boolean;
 };
-export function FoodEditor({ items, onConfirm, onCancel }: Props) {
+export function FoodEditor({
+  items,
+  onConfirm,
+  onCancel,
+  busy = false,
+}: Props) {
   const [drafts, setDrafts] = useState(() => draftFoods(items));
   const [error, setError] = useState("");
   function update(id: string, patch: Partial<FoodDraft>) {
@@ -36,6 +42,7 @@ export function FoodEditor({ items, onConfirm, onCancel }: Props) {
           <View style={styles.row}>
             <Text style={styles.small}>음식 {index + 1}</Text>
             <Pressable
+              disabled={busy}
               accessibilityRole="button"
               accessibilityLabel={`음식 ${index + 1} 삭제`}
               onPress={() =>
@@ -49,6 +56,7 @@ export function FoodEditor({ items, onConfirm, onCancel }: Props) {
             </Pressable>
           </View>
           <TextInput
+            editable={!busy}
             accessibilityLabel={`음식 ${index + 1} 이름`}
             placeholder="음식 이름"
             maxLength={100}
@@ -57,6 +65,7 @@ export function FoodEditor({ items, onConfirm, onCancel }: Props) {
             style={[styles.input, { minHeight: 48 }]}
           />
           <TextInput
+            editable={!busy}
             accessibilityLabel={`음식 ${index + 1} 먹은 양`}
             placeholder="예: 밥 반 공기"
             maxLength={200}
@@ -66,6 +75,7 @@ export function FoodEditor({ items, onConfirm, onCancel }: Props) {
           />
           <View style={styles.row}>
             <TextInput
+              editable={!busy}
               accessibilityLabel={`음식 ${index + 1} 칼로리`}
               keyboardType="number-pad"
               value={item.kcal}
@@ -78,6 +88,7 @@ export function FoodEditor({ items, onConfirm, onCancel }: Props) {
             {[0.5, 1.5, 2].map((factor) => (
               <Pressable
                 key={factor}
+                disabled={busy}
                 accessibilityRole="button"
                 accessibilityLabel={`음식 ${index + 1} 양 ${factor}배`}
                 onPress={() => update(item.id, scaleFood(item, factor))}
@@ -100,7 +111,7 @@ export function FoodEditor({ items, onConfirm, onCancel }: Props) {
       <Button
         title="빠진 음식 추가"
         secondary
-        disabled={drafts.length >= 20}
+        disabled={busy || drafts.length >= 20}
         onPress={() =>
           setDrafts((current) => [
             ...current,
@@ -115,6 +126,8 @@ export function FoodEditor({ items, onConfirm, onCancel }: Props) {
       )}
       <Button
         title="수정 적용"
+        disabled={busy}
+        loading={busy}
         onPress={() => {
           try {
             onConfirm(confirmFoods(drafts));
@@ -123,7 +136,7 @@ export function FoodEditor({ items, onConfirm, onCancel }: Props) {
           }
         }}
       />
-      <Button title="수정 취소" secondary onPress={onCancel} />
+      <Button title="수정 취소" secondary disabled={busy} onPress={onCancel} />
     </View>
   );
 }

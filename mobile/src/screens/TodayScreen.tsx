@@ -14,6 +14,9 @@ type Props = {
   preferences: Preferences | null;
   onRecipe: (recipe: Recipe) => void;
   onPreferences: () => void;
+  busy: boolean;
+  picking: boolean;
+  onLibrary: () => void;
   onScan: () => void;
   onProfile: () => void;
   onJournal: () => void;
@@ -26,6 +29,9 @@ export function TodayScreen({
   preferences,
   onRecipe,
   onPreferences,
+  busy,
+  picking,
+  onLibrary,
   onScan,
   onProfile,
   onJournal,
@@ -114,7 +120,18 @@ export function TodayScreen({
           <Button title="내 정보 확인" secondary onPress={onProfile} />
         </View>
       )}
-      <Button title="+  음식 사진 분석" onPress={onScan} />
+      <Button
+        title={picking ? "사진 준비 중…" : "음식 사진 찍기"}
+        disabled={busy}
+        loading={picking}
+        onPress={onScan}
+      />
+      <Button
+        title="앨범에서 사진 선택"
+        secondary
+        disabled={busy}
+        onPress={onLibrary}
+      />
       <Button
         title={`오늘 식사 ${meals.filter((m) => !m.deletedAt && m.localDate === day).length}건 보기`}
         secondary

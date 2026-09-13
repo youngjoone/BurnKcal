@@ -1,3 +1,4 @@
+import { BottomNavigation, MainTab } from "./src/components/BottomNavigation";
 import { SettingsScreen } from "./src/screens/SettingsScreen";
 import { Preferences } from "./src/domain/recommendations";
 import { Recipe } from "./src/data/recipes";
@@ -235,26 +236,6 @@ export default function App() {
                 <Text style={styles.errorText}>{error}</Text>
               </View>
             )}
-            {["today", "journal", "settings"].includes(screen.step) && (
-              <View style={{ flexDirection: "row", gap: 8 }}>
-                {(
-                  [
-                    { step: "today", title: "오늘" },
-                    { step: "journal", title: "기록" },
-                    { step: "settings", title: "설정" },
-                  ] as const
-                ).map((tab) => (
-                  <View key={tab.step} style={{ flex: 1 }}>
-                    <Button
-                      title={tab.title}
-                      secondary={screen.step !== tab.step}
-                      disabled={busy}
-                      onPress={() => navigate({ step: tab.step })}
-                    />
-                  </View>
-                ))}
-              </View>
-            )}
             {screen.step === "home" && (
               <Button
                 title="오늘 화면으로"
@@ -272,7 +253,10 @@ export default function App() {
                 preferences={preferences}
                 onRecipe={(recipe) => navigate({ step: "recipe", recipe })}
                 onPreferences={() => navigate({ step: "preferences" })}
-                onScan={() => navigate({ step: "home" })}
+                busy={busy}
+                picking={picking}
+                onScan={() => selectPhoto("camera")}
+                onLibrary={() => selectPhoto("library")}
                 onProfile={() => navigate({ step: "profile" })}
                 onJournal={() => navigate({ step: "journal" })}
               />
@@ -405,6 +389,7 @@ export default function App() {
             )}
             {screen.step === "editMeal" && (
               <FoodEditor
+                busy={busy}
                 items={screen.meal.items}
                 onCancel={() => navigate({ step: "journal" })}
                 onConfirm={(items) =>
@@ -511,6 +496,13 @@ export default function App() {
               </View>
             )}
           </ScrollView>
+          {["today", "journal", "settings"].includes(screen.step) && (
+            <BottomNavigation
+              current={screen.step as MainTab}
+              disabled={busy}
+              onChange={(step) => navigate({ step })}
+            />
+          )}
         </KeyboardAvoidingView>
       </SafeAreaView>
     </SafeAreaProvider>

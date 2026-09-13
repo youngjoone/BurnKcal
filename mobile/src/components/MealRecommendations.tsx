@@ -1,4 +1,4 @@
-import { Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
 import { Preferences, recommendMeals } from "../domain/recommendations";
 import { Recipe, recipeKcal } from "../data/recipes";
 import { Button } from "./Button";
@@ -21,20 +21,22 @@ export function MealRecommendations({
       <Text style={styles.label}>다음 한 끼 추천</Text>
       <Text style={styles.small}>{result.notice}</Text>
       {result.recipes.map((recipe) => (
-        <View key={recipe.id} style={styles.card}>
-          <View style={styles.row}>
-            <Text style={[styles.label, { flex: 1 }]}>{recipe.name}</Text>
-            <Text style={styles.label}>{recipeKcal(recipe)} kcal</Text>
+        <Pressable
+          key={recipe.id}
+          accessibilityRole="button"
+          accessibilityLabel={`${recipe.name} 레시피 보기`}
+          onPress={() => onRecipe(recipe)}
+          style={[styles.card, styles.row]}
+        >
+          <View style={{ flex: 1, gap: 6 }}>
+            <Text style={styles.label}>{recipe.name}</Text>
+            <Text style={styles.small}>약 {recipe.minutes}분 · 1인분</Text>
           </View>
-          <Text style={styles.small}>
-            1인분 · 약 {recipe.minutes}분 · 재료 {recipe.ingredients.length}개
-          </Text>
-          <Button
-            title={`${recipe.name} 레시피 보기`}
-            secondary
-            onPress={() => onRecipe(recipe)}
-          />
-        </View>
+          <View style={{ alignItems: "flex-end", gap: 6 }}>
+            <Text style={styles.label}>{recipeKcal(recipe)} kcal</Text>
+            <Text style={styles.small}>레시피 보기 →</Text>
+          </View>
+        </Pressable>
       ))}
       <Button
         title="제외 재료·조리 시간 설정"

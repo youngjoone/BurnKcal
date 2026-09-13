@@ -28,6 +28,7 @@ export function ResultScreen({
   const [items, setItems] = useState(result.items);
   const [editing, setEditing] = useState(false);
   const [edited, setEdited] = useState(false);
+  const [showNotices, setShowNotices] = useState(false);
   if (editing)
     return (
       <FoodEditor
@@ -96,14 +97,6 @@ export function ResultScreen({
           </View>
         ))}
       </View>
-      <View style={[styles.stack, { gap: 8 }]}>
-        <Text style={styles.small}>분석 참고사항</Text>
-        {result.notices.map((notice, index) => (
-          <Text key={index} style={[styles.small, { fontSize: 12 }]}>
-            {notice}
-          </Text>
-        ))}
-      </View>
       <Button
         title="음식·먹은 양 수정"
         secondary
@@ -121,6 +114,22 @@ export function ResultScreen({
           onPress={() => onSave(items)}
         />
       )}
+      <View style={[styles.stack, { gap: 8 }]}>
+        <Text style={styles.small}>분석 참고사항</Text>
+        {(showNotices ? result.notices : result.notices.slice(0, 1)).map(
+          (notice, index) => (
+            <Text key={index} style={[styles.small, { fontSize: 12 }]}>
+              {notice}
+            </Text>
+          ),
+        )}
+      </View>
+      <Button
+        title={showNotices ? "참고사항 접기" : "분석 참고사항 더 보기"}
+        secondary
+        disabled={busy}
+        onPress={() => setShowNotices(!showNotices)}
+      />
       <Button
         title="다른 식사 분석하기"
         secondary
