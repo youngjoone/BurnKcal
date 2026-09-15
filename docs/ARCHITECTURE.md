@@ -5,7 +5,9 @@
 ```mermaid
 flowchart TD
   User[사용자] --> App[App.tsx: 상태와 흐름]
-  App --> Screens[Home / Preview / Result: 화면]
+  App --> Screens[Profile / Today / Journal / Settings / Preview / Result: 화면]
+  App --> Storage[profile / journal / preferences: 기기 저장]
+  Storage --> SQLite[SQLite / 웹 localStorage]
   App --> Photos[photos.ts: 사진 선택과 JPEG 변환]
   App --> Client[api.ts: 서버 통신]
   Client --> Controller[AnalysisController: 요청 검증]
@@ -30,7 +32,7 @@ Gemini는 음식별 인식·추정량·칼로리 범위와 불확실성 안내�
 
 | 기능 | 구현 위치 | 맡는 일 | 다른 계층에 맡기는 일 |
 | --- | --- | --- | --- |
-| 화면 이동 | `mobile/App.tsx` | home → preview → result, 비동기 잠금, 오류 | 네트워크·촬영 구현 |
+| 화면 이동 | `mobile/App.tsx` | 온보딩·탭·사진·기록·설정 상태, 비동기 잠금, 오류 | 네트워크·촬영 구현 |
 | 홈 | `mobile/src/screens/HomeScreen.tsx` | 시작 안내, 촬영·앨범 버튼 | 카메라 권한 요청 |
 | 사진 확인 | `mobile/src/screens/PreviewScreen.tsx` | 사진과 설명 입력, 전송 이벤트 | 파일 변환·업로드 |
 | 결과 | `mobile/src/screens/ResultScreen.tsx` | 총합·범위·항목·데모 표시 | 칼로리 계산·AI 호출 |
@@ -58,7 +60,7 @@ AI 공급자 추가 시 `FoodAnalyzer`의 구현을 추가하고 구성으로 �
 Gemini 프롬프트·JSON 스키마는 `backend/src/main/resources/gemini/`에서 관리합니다.
 응답 형식이 같다면 화면을 다시 만들 필요가 없습니다. 데모 고정 문구·상태 API도 실제 모드에 맞게 함께 갱신합니다.
 음식 아님·판별 불가 처리를 추가할 때는 성공처럼 0 kcal를 반환하지 않고 API 규약을 먼저 확장합니다.
-화면이 늘어날 때 Router를, 기록이 필요해질 때 저장소를 도입합니다.
+딥 링크·복잡한 중첩 화면이 필요해지면 Router 도입을 검토합니다.
 
 ### 음식 수정
 
@@ -66,7 +68,7 @@ Gemini 프롬프트·JSON 스키마는 `backend/src/main/resources/gemini/`에�
 
 ### 식사 기록
 
-`domain/journal.ts`는 기록 검증과 현지 날짜·합계를, `services/database.ts`는 SQLite를, `services/journal.ts`는 저장과 불러오기를 담당합니다. 웹은 `database.web.ts`의 localStorage를 사용합니다. `JournalScreen`에서 오늘/이전 기록·수정·삭제·복구를 제공합니다. 상세 규칙은 [STORAGE.md](STORAGE.md)에 있습니다.
+`domain/journal.ts`는 기록 검증과 합계를, `services/database.ts`는 SQLite를, `services/journal.ts`는 저장과 불러오기를 담당합니다. 웹은 `database.web.ts`의 localStorage를 사용합니다. `domain/dates.ts`는 현지 날짜·윤년 검증·월 이동·달력 셀을, `MealCalendar`는 7열 달력 표시를 담당합니다. `JournalScreen`에서 날짜별 기록·수정·삭제·복구를 제공합니다. `App.tsx`가 선택 날짜를 사진 확인·AI 결과·직접 입력·저장까지 유지합니다. 상세 규칙은 [STORAGE.md](STORAGE.md)에 있습니다.
 
 ### 목표와 레시피
 
