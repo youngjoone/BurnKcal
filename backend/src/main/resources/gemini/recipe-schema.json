@@ -1,0 +1,95 @@
+{
+  "type": "object",
+  "properties": {
+    "recipes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "minutes": {
+            "type": "integer"
+          },
+          "allergens": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 0,
+            "maxItems": 10
+          },
+          "ingredients": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "amount": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "name",
+                "amount"
+              ],
+              "additionalProperties": false
+            },
+            "minItems": 1,
+            "maxItems": 20
+          },
+          "steps": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "maxItems": 8
+          },
+          "nutrition": {
+            "type": "object",
+            "properties": {
+              "kcal": {
+                "type": "integer"
+              },
+              "proteinG": {
+                "type": "number"
+              },
+              "carbsG": {
+                "type": "number"
+              },
+              "fatG": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "kcal",
+              "proteinG",
+              "carbsG",
+              "fatG"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "name",
+          "minutes",
+          "allergens",
+          "ingredients",
+          "steps",
+          "nutrition"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 0,
+      "maxItems": 3
+    }
+  },
+  "required": [
+    "recipes"
+  ],
+  "additionalProperties": false
+}

@@ -1,3 +1,4 @@
+import { useMealRecommendations } from "./src/hooks/useMealRecommendations";
 import { ManualMealScreen } from "./src/screens/ManualMealScreen";
 import { StatisticsScreen } from "./src/screens/StatisticsScreen";
 import { StatisticsRange } from "./src/domain/statistics";
@@ -8,11 +9,11 @@ import { Recipe } from "./src/data/recipes";
 import { loadPreferences, savePreferences } from "./src/services/preferences";
 import { PreferencesScreen } from "./src/screens/PreferencesScreen";
 import { RecipeScreen } from "./src/screens/RecipeScreen";
-import { Profile } from "./src/domain/profile";
+import { Profile, caloriePlan } from "./src/domain/profile";
 import { loadProfile, saveProfile } from "./src/services/profile";
 import { ProfileScreen } from "./src/screens/ProfileScreen";
 import { TodayScreen } from "./src/screens/TodayScreen";
-import { Meal, localDate } from "./src/domain/journal";
+import { Meal, localDate, dailyTotal } from "./src/domain/journal";
 import { newId } from "./src/domain/food";
 import { loadMeals, saveMeal, updateMeal } from "./src/services/journal";
 import { JournalScreen } from "./src/screens/JournalScreen";
@@ -84,6 +85,19 @@ export default function App() {
   const [mode, setMode] = useState<AnalysisMode | null>(null);
   const lock = useRef(false);
   const scroll = useRef<ScrollView>(null);
+
+  const dailyTarget = profile ? caloriePlan(profile).dailyKcal : null;
+  const recommendation = useMealRecommendations(
+    dailyTarget && preferences && storageReady
+      ? {
+          dailyTargetKcal: dailyTarget,
+          remainingKcal: dailyTarget - dailyTotal(meals, day),
+          preferences,
+        }
+      : null,
+    screen.step === "today" && profileReady,
+    day,
+  );
 
   useEffect(() => {
     let active = true;
@@ -267,6 +281,8 @@ export default function App() {
             )}
             {screen.step === "today" && (
               <TodayScreen
+                recommendation={recommendation}
+                onRefreshRecommendation={recommendation.refresh}
                 meals={meals}
                 profile={profile}
                 day={day}

@@ -1,3 +1,7 @@
+import {
+  RecommendationRequest,
+  parseRecommendationResult,
+} from "../types/recommendation";
 import { uploadFile } from "./uploadFile";
 import {
   isAnalysisResult,
@@ -84,3 +88,11 @@ export async function analyzeFoodName(foodName: string, portion: string) {
   return result;
 }
 
+export async function recommendRecipes(input: RecommendationRequest) {
+  const result = await request("/api/recommendations", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  return parseRecommendationResult(result, input);
+}

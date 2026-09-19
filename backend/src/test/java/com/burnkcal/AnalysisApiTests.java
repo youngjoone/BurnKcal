@@ -66,6 +66,15 @@ class AnalysisApiTests {
     }
 
     @Test
+    void recommendationsRequireValidPreferencesAndLiveAiMode() throws Exception {
+        mvc.perform(post("/api/recommendations").contentType("application/json")
+            .content("{\"dailyTargetKcal\":1650,\"remainingKcal\":600,\"preferences\":{\"allergens\":[],\"excludedIngredients\":\"\",\"maxMinutes\":30},\"avoidNames\":[]}"))
+            .andExpect(status().isServiceUnavailable()).andExpect(jsonPath("$.message").isString());
+        mvc.perform(post("/api/recommendations").contentType("application/json").content("{}"))
+            .andExpect(status().isBadRequest()).andExpect(jsonPath("$.message").isString());
+    }
+
+    @Test
     void missingPhotoReturnsReadableError() throws Exception {
         mvc.perform(multipart("/api/analyze"))
                 .andExpect(status().isBadRequest())

@@ -1,3 +1,4 @@
+import { RecommendationResult } from "../types/recommendation";
 import { MealRecommendations } from "../components/MealRecommendations";
 import { Preferences } from "../domain/recommendations";
 import { Recipe } from "../data/recipes";
@@ -8,6 +9,12 @@ import { Button } from "../components/Button";
 import { colors, styles } from "../theme";
 type Props = {
   meals: Meal[];
+  recommendation: {
+    loading: boolean;
+    result: RecommendationResult | null;
+    error: string | null;
+  };
+  onRefreshRecommendation: () => void;
   profile: Profile | null;
   day: string;
   ready: boolean;
@@ -23,6 +30,8 @@ type Props = {
 };
 export function TodayScreen({
   meals,
+  recommendation,
+  onRefreshRecommendation,
   profile,
   day,
   ready,
@@ -141,6 +150,8 @@ export function TodayScreen({
         ready &&
         (preferences ? (
           <MealRecommendations
+            ai={recommendation}
+            onRefresh={onRefreshRecommendation}
             remaining={goal - consumed}
             preferences={preferences}
             onRecipe={onRecipe}
