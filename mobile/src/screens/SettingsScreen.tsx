@@ -48,9 +48,10 @@ export function SettingsScreen({
       <View style={styles.stack}>
         <Text style={styles.label}>내 데이터</Text>
         <Text style={styles.small}>
-          신체 정보와 식사 기록은 이 기기에 저장돼요. 사진 분석 시에만 사진과
-          음식 설명이 Google Gemini로 전송돼요. 사진 원본은 기록에 보관하지
-          않아요.
+          신체 정보와 식사 기록은 이 기기에 저장돼요. 분석할 때 사진·설명 또는
+          음식 이름·양이 Google Gemini로 전송돼요. 추천할 때는 계산된 하루
+          목표·남은 칼로리·제외 재료·조리 시간과 이전 메뉴 이름을 보내요.
+          키·체중·나이 원문과 사진 원본은 서버에 보관하지 않아요.
         </Text>
         <Text style={styles.small}>
           아직 계정 동기화·백업은 없어요. 앱을 삭제하거나 기기를 바꾸면 기록이
