@@ -1,6 +1,6 @@
 import { Pressable, Text, View, StyleSheet } from "react-native";
 import { colors } from "../theme";
-export type MainTab = "today" | "journal" | "settings";
+export type MainTab = "today" | "journal" | "statistics" | "settings";
 export function BottomNavigation({
   current,
   disabled,
@@ -16,6 +16,7 @@ export function BottomNavigation({
         [
           { id: "today", label: "오늘" },
           { id: "journal", label: "기록" },
+          { id: "statistics", label: "통계" },
           { id: "settings", label: "설정" },
         ] as const
       ).map((tab) => (

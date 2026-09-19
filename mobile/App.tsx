@@ -1,3 +1,5 @@
+import { StatisticsScreen } from "./src/screens/StatisticsScreen";
+import { StatisticsRange } from "./src/domain/statistics";
 import { BottomNavigation, MainTab } from "./src/components/BottomNavigation";
 import { SettingsScreen } from "./src/screens/SettingsScreen";
 import { Preferences } from "./src/domain/recommendations";
@@ -39,6 +41,7 @@ type Screen =
   | { step: "preferences" }
   | { step: "recipe"; recipe: Recipe }
   | { step: "today" }
+  | { step: "statistics" }
   | { step: "loading" }
   | { step: "onboarding" }
   | { step: "settings" }
@@ -63,6 +66,9 @@ export default function App() {
   const [meals, setMeals] = useState<Meal[]>([]);
   const [storageReady, setStorageReady] = useState(false);
   const [day, setDay] = useState(localDate());
+  const [statisticsRange, setStatisticsRange] =
+    useState<StatisticsRange>("month");
+  const [statisticsDay, setStatisticsDay] = useState<string | null>(null);
   const [journalDay, setJournalDay] = useState<string | null>(null);
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
@@ -271,6 +277,25 @@ export default function App() {
                   setJournalDay(null);
                   navigate({ step: "journal" });
                 }}
+              />
+            )}
+            {screen.step === "statistics" && (
+              <StatisticsScreen
+                meals={meals}
+                today={day}
+                anchorDay={statisticsDay ?? day}
+                range={statisticsRange}
+                ready={storageReady}
+                busy={busy}
+                onRange={setStatisticsRange}
+                onPeriod={(date) =>
+                  setStatisticsDay(date === day ? null : date)
+                }
+                onDay={(date) => {
+                  setJournalDay(date === day ? null : date);
+                  navigate({ step: "journal" });
+                }}
+                onRetry={() => void run(refreshMeals)}
               />
             )}
             {screen.step === "recipe" && (
@@ -567,7 +592,9 @@ export default function App() {
               </View>
             )}
           </ScrollView>
-          {["today", "journal", "settings"].includes(screen.step) && (
+          {["today", "journal", "statistics", "settings"].includes(
+            screen.step,
+          ) && (
             <BottomNavigation
               current={screen.step as MainTab}
               disabled={busy}
