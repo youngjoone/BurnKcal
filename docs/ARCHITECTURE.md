@@ -5,7 +5,7 @@
 ```mermaid
 flowchart TD
   User[사용자] --> App[App.tsx: 상태와 흐름]
-  App --> Screens[Profile / Today / Journal / Settings / Preview / Result: 화면]
+  App --> Screens[Profile / Today / Journal / Statistics / Settings / Preview / Result: 화면]
   App --> Storage[profile / journal / preferences: 기기 저장]
   Storage --> SQLite[SQLite / 웹 localStorage]
   App --> Photos[photos.ts: 사진 선택과 JPEG 변환]
@@ -13,12 +13,18 @@ flowchart TD
   Client --> Controller[AnalysisController: 요청 검증]
   Controller --> Analyzer[FoodAnalyzer: 분석 인터페이스]
   Analyzer --> Demo[DemoFoodAnalyzer: 고정 예시]
-  Analyzer --> Gemini[GeminiFoodAnalyzer: 사진 분석·응답 검증]
-  Gemini --> Google[Google Gemini API]
+  Analyzer --> Gemini[GeminiFoodAnalyzer: 사진·이름 분석]
+  Gemini --> Transport[GeminiClient: 공통 전송·공급자 오류]
+  App --> Recommendations[useMealRecommendations: 요청·캐시·경합 제어]
+  Recommendations --> Client
+  Client --> RecipeAPI[RecommendationController: 조건 검증]
+  RecipeAPI --> Recommender[GeminiRecipeRecommender: 생성·제외 조건 검증]
+  Recommender --> Transport
+  Transport --> Google[Google Gemini API]
   Client --> Contract[analysis.ts: 응답 검증]
 ```
 
-기본은 데모이며 서버 설정으로 Gemini를 선택합니다. Gemini 모드에서만 사진·설명을 외부 API로 전송하며 앱은 전송 전에 안내합니다.
+기본은 데모이며 서버 설정으로 Gemini를 선택합니다. Gemini 모드에서 사진·설명 또는 음식명·양을 전송합니다. 실시간 추천에는 목표·잔여량·제외 조건을 전송하며 신체 정보 원문은 보내지 않습니다. 앱에 전송 안내를 표시합니다.
 
 ## 여러 음식과 디자인 기준
 
@@ -48,7 +54,7 @@ Gemini는 음식별 인식·추정량·칼로리 범위와 불확실성 안내�
 
 ## 상태와 데이터 수명
 
-- 앱 화면 상태는 구분된 TypeScript union으로 관리합니다. 결과 화면에는 반드시 사진과 결과가 있습니다.
+- 앱 화면 상태는 구분된 TypeScript union으로 관리합니다. 결과 화면에는 분석 결과가 있으며 음식 이름 분석에는 사진이 없습니다.
 - 요청 중 버튼을 잠그고 실패 시 사진·설명을 유지해 다시 요청할 수 있습니다.
 - 선택 사진과 분석 중 상태는 앱 종료 시 초기화됩니다. 확인하여 저장한 식사 기록은 SQLite에 남습니다.
 - 변환 사진은 Expo 캐시에, 요청 파일은 서버의 일시적 멀티파트 처리 영역에 남을 수 있습니다. 영구 사진 저장소는 없습니다.
@@ -72,8 +78,22 @@ Gemini 프롬프트·JSON 스키마는 `backend/src/main/resources/gemini/`에�
 
 ### 목표와 레시피
 
-`domain/profile.ts`가 신체 입력 검증·대사량 추정·자동 목표 제외 조건을, `services/profile.ts`가 기기 저장을 담당합니다. 계산 근거와 제품 정책은 [CALORIE_TARGETS.md](CALORIE_TARGETS.md)에 있습니다. `data/recipes.ts`는 1인분 레시피 6종의 재료·순서·추정 칼로리입니다. `domain/recommendations.ts`가 남은 칼로리·제외 재료·시간 조건으로 후보를 고릅니다. 조건에 맞지 않는 알레르기 재료를 임의로 허용하지 않습니다. 단, 식품 성분표·교차 접촉을 판별하지는 못합니다. `services/preferences.ts`가 설정을 저장합니다.
+`domain/profile.ts`가 신체 입력 검증·대사량 추정·자동 목표 제외 조건을, `services/profile.ts`가 기기 저장을 담당합니다. 계산 근거와 제품 정책은 [CALORIE_TARGETS.md](CALORIE_TARGETS.md)에 있습니다. `data/recipes.ts`는 기본 레시피 6종과 AI 레시피 타입을 정의합니다. 기본 영양값은 `data/nutrients.ts`의 USDA 100g 값으로 계산합니다. `domain/recommendations.ts`가 남은 칼로리·제외 재료·시간 조건으로 후보를 고릅니다. 조건에 맞지 않는 알레르기 재료를 임의로 허용하지 않습니다. 단, 식품 성분표·교차 접촉을 판별하지는 못합니다. `services/preferences.ts`가 설정을 저장합니다.
 
 ### 첫 실행과 설정
 
 신체 정보가 없으면 `ProfileScreen`에서 신체/목표 → 생활 정보 → 계산 결과 확인의 3단계를 먼저 보여줍니다. 최종 저장 후 Today로 이동하며 재실행 시 정보를 다시 요구하지 않습니다. 이후 수정은 `SettingsScreen`에서 시작합니다. 목표 계산 대상이 아니어도 기록 기능은 이용할 수 있습니다.
+
+### 월별·연도별 통계
+
+`domain/statistics.ts`는 현지 날짜별 집계·기록일 평균·기간 이동을 담당하고 `StatisticsScreen`은 그래프·목록을 표시합니다. App은 조회 범위와 달력 이동을 연결합니다. 식사 변경 시 저장 목록에서 재집계합니다. [통계 정의](STATISTICS.md)를 참고합니다.
+
+### 이름으로 식사 기록
+
+`ManualMealScreen`은 이름과 선택적인 양을 받고 `api.ts`가 `/api/analyze/text`를 호출합니다. `FoodAnalyzer.analyzeText`의 결과를 기존 Result 편집·저장 흐름으로 연결합니다. 칼로리를 이미 아는 경우 직접 입력을 제공합니다.
+
+### 실시간 레시피
+
+`useMealRecommendations`가 요청 키(날짜·목표·잔여량·설정), 30분 메모리 캐시, 새 메뉴 요청, 진행 중 중복과 오래된 응답을 관리합니다. 통신은 `api.ts`, 계약 검증은 `types/recommendation.ts`, 표시는 `MealRecommendations`/`NutritionFacts`/`RecipeScreen`이 맡습니다.
+
+서버 `recommendation/`의 Controller는 입력 규칙을, `GeminiRecipeRecommender`는 프롬프트·응답 영양값·제외 조건을 담당합니다. 사진·이름·레시피 생성 모두 `ai/GeminiClient`의 전송·25초 제한·공급자 오류 처리를 공유합니다. 실패하면 앱에서 조건에 맞는 기본 레시피를 명시적으로 표시합니다. [영양값의 출처와 한계](RECIPE_NUTRITION.md)를 참고합니다.
