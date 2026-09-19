@@ -45,6 +45,27 @@ class AnalysisApiTests {
     }
 
     @Test
+    void foodNameReturnsSameExplicitDemoContractWithoutPhoto() throws Exception {
+        mvc.perform(post("/api/analyze/text").contentType("application/json")
+                        .content("{\"foodName\":\"순대국\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.mode").value("demo"))
+                .andExpect(jsonPath("$.totalKcal").value(650))
+                .andExpect(jsonPath("$.items.length()").value(3));
+    }
+
+    @Test
+    void textAnalysisRejectsMissingBlankOversizedAndMalformedInput() throws Exception {
+        for (String input : java.util.List.of("{}", "{\"foodName\":\"  \"}", "not json",
+                "{\"foodName\":\"" + "가".repeat(101) + "\"}",
+                "{\"foodName\":\"순대국\",\"portion\":\"" + "가".repeat(201) + "\"}")) {
+            mvc.perform(post("/api/analyze/text").contentType("application/json").content(input))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.message").isString());
+        }
+    }
+
+    @Test
     void missingPhotoReturnsReadableError() throws Exception {
         mvc.perform(multipart("/api/analyze"))
                 .andExpect(status().isBadRequest())

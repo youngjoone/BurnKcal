@@ -81,6 +81,25 @@ class GeminiFoodAnalyzerTests {
     }
 
     @Test
+    void textAnalysisUsesNameAndPortionWithoutAnImageAndHasItsOwnNotice() {
+        var result = analyzer.analyzeText("순대국", "밥 제외 1인분");
+        assertThat(result.totalKcal()).isEqualTo(500);
+        assertThat(result.notices().get(0)).contains("음식 이름").doesNotContain("사진");
+        assertThat(requestBody.at("/contents/0/parts").size()).isEqualTo(1);
+        assertThat(requestBody.at("/contents/0/parts/0/text").asText()).contains("순대국", "밥 제외 1인분");
+        assertThat(requestBody.at("/contents/0/parts/0/inlineData").isMissingNode()).isTrue();
+        assertThat(requestBody.at("/systemInstruction/parts/0/text").asText()).contains("exclude a separate bowl of rice");
+    }
+
+    @Test
+    void textAnalysisRequestsANameInsteadOfANewPhotoForUncertainInput() {
+        response = envelope("{\"status\":\"uncertain\",\"title\":\"불명확\",\"items\":[],\"notices\":[]}");
+        var error = catchThrowableOfType(() -> analyzer.analyzeText("그냥 음식", "1인분"), ResponseStatusException.class);
+        assertThat(error.getStatusCode().value()).isEqualTo(422);
+        assertThat(error.getReason()).contains("재료").doesNotContain("사진");
+    }
+
+    @Test
     void rejectsNonFoodInsteadOfShowingZeroCalories() {
         response = envelope("{\"status\":\"not_food\",\"title\":\"사진\",\"items\":[],\"notices\":[]}");
         assertStatus(422);

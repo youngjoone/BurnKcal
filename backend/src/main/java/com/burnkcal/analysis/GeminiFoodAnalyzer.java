@@ -1,11 +1,9 @@
 package com.burnkcal.analysis;
 
 import java.io.IOException;
+import com.burnkcal.ai.GeminiClient;
 import java.net.URI;
 import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.net.http.HttpTimeoutException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -25,12 +23,9 @@ import tools.jackson.databind.ObjectMapper;
 @Service
 @ConditionalOnProperty(name = "burnkcal.analysis-mode", havingValue = "gemini")
 public class GeminiFoodAnalyzer implements FoodAnalyzer {
-    private final String apiKey;
-    private final ObjectMapper mapper;
-    private final HttpClient client;
-    private final URI endpoint;
-    private final Duration timeout;
+    private final GeminiClient client;
     private final String prompt;
+    private final String textPrompt;
     private final JsonNode schema;
 
     @Autowired
@@ -42,19 +37,10 @@ public class GeminiFoodAnalyzer implements FoodAnalyzer {
 
     // Package-private endpoint injection keeps tests offline without exposing a production override.
     GeminiFoodAnalyzer(String apiKey, String model, ObjectMapper mapper, HttpClient client, URI base, Duration timeout) {
-        if (apiKey == null || apiKey.isBlank()) {
-            throw new IllegalStateException("Gemini 모드에는 GEMINI_API_KEY가 필요합니다. backend/.env를 확인하세요.");
-        }
-        if (!model.matches("[a-zA-Z0-9._-]+")) {
-            throw new IllegalStateException("GEMINI_MODEL 형식이 올바르지 않습니다.");
-        }
-        this.apiKey = apiKey.trim();
-        this.mapper = mapper;
-        this.client = client;
-        this.endpoint = base.resolve("models/" + model + ":generateContent");
-        this.timeout = timeout;
+        this.client = new GeminiClient(apiKey, model, mapper, client, base, timeout);
         try {
             this.prompt = new ClassPathResource("gemini/analysis-prompt.txt").getContentAsString(StandardCharsets.UTF_8);
+            this.textPrompt = new ClassPathResource("gemini/text-analysis-prompt.txt").getContentAsString(StandardCharsets.UTF_8);
             this.schema = mapper.readTree(new ClassPathResource("gemini/analysis-schema.json").getContentAsString(StandardCharsets.UTF_8));
         } catch (IOException exception) {
             throw new IllegalStateException("Gemini 분석 설정 파일을 읽을 수 없습니다.", exception);
@@ -63,58 +49,28 @@ public class GeminiFoodAnalyzer implements FoodAnalyzer {
 
     @Override
     public AnalysisResult analyze(byte[] image, String contentType, String note) {
-        var payload = Map.of(
-                "systemInstruction", Map.of("parts", List.of(Map.of("text", prompt))),
-                "contents", List.of(Map.of("role", "user", "parts", List.of(
-                        Map.of("inlineData", Map.of("mimeType", contentType, "data", Base64.getEncoder().encodeToString(image))),
-                        Map.of("text", "음식 설명 (비어 있을 수 있음): " + note)))),
-                "generationConfig", Map.of("responseMimeType", "application/json", "responseJsonSchema", schema,
-                        "maxOutputTokens", 4096, "temperature", 0.2));
-        try {
-            var request = HttpRequest.newBuilder(endpoint).timeout(timeout)
-                    .header("Content-Type", "application/json").header("x-goog-api-key", apiKey)
-                    .POST(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(payload))).build();
-            var response = client.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
-            if (response.statusCode() == 429) {
-                throw failure(HttpStatus.TOO_MANY_REQUESTS, "AI 호출 한도에 도달했어요. 잠시 후 다시 시도해 주세요.");
-            }
-            if (response.statusCode() == 401 || response.statusCode() == 403) {
-                throw failure(HttpStatus.SERVICE_UNAVAILABLE, "AI 서버 인증을 확인해야 해요. 서버의 Gemini 키와 권한을 확인해 주세요.");
-            }
-            if (response.statusCode() != 200) {
-                throw failure(HttpStatus.BAD_GATEWAY, "AI 분석을 완료하지 못했어요. 잠시 후 다시 시도해 주세요.");
-            }
-            return parseResponse(response.body());
-        } catch (HttpTimeoutException exception) {
-            throw failure(HttpStatus.GATEWAY_TIMEOUT, "AI 응답이 늦어지고 있어요. 잠시 후 다시 시도해 주세요.");
-        } catch (InterruptedException exception) {
-            Thread.currentThread().interrupt();
-            throw failure(HttpStatus.SERVICE_UNAVAILABLE, "AI 요청이 중단됐어요. 다시 시도해 주세요.");
-        } catch (IOException exception) {
-            throw failure(HttpStatus.BAD_GATEWAY, "AI 서비스에 연결할 수 없어요. 잠시 후 다시 시도해 주세요.");
-        }
+        return requestAnalysis(prompt, List.of(
+                Map.of("inlineData", Map.of("mimeType", contentType, "data", Base64.getEncoder().encodeToString(image))),
+                Map.of("text", "음식 설명 (비어 있을 수 있음): " + note)), true);
     }
 
-    private AnalysisResult parseResponse(String body) {
+    @Override
+    public AnalysisResult analyzeText(String foodName, String portion) {
+        return requestAnalysis(textPrompt, List.of(Map.of("text", "음식 이름: " + foodName + "\n먹은 양: " + portion)), false);
+    }
+
+    private AnalysisResult requestAnalysis(String systemPrompt, List<?> parts, boolean photo) {
+        return parseResponse(client.generate(systemPrompt, schema, parts, 0.2, 4096), photo);
+    }
+
+    private AnalysisResult parseResponse(JsonNode result, boolean photo) {
         try {
-            JsonNode envelope = mapper.readTree(body);
-            JsonNode candidate = envelope.path("candidates").path(0);
-            if (!"STOP".equals(candidate.path("finishReason").asText())) {
-                throw invalidResponse();
-            }
-            var text = new StringBuilder();
-            for (JsonNode part : candidate.path("content").path("parts")) {
-                if (!part.path("thought").asBoolean(false) && part.path("text").isTextual()) {
-                    text.append(part.path("text").asText());
-                }
-            }
-            JsonNode result = mapper.readTree(text.toString());
             String status = string(result, "status", 20);
             if ("not_food".equals(status)) {
-                throw failure(HttpStatus.UNPROCESSABLE_CONTENT, "음식을 찾지 못했어요. 음식이 보이는 사진을 선택해 주세요.");
+                throw failure(HttpStatus.UNPROCESSABLE_CONTENT, photo ? "음식을 찾지 못했어요. 음식이 보이는 사진을 선택해 주세요." : "음식 이름을 확인하지 못했어요. 먹은 음식 이름을 입력해 주세요.");
             }
             if ("uncertain".equals(status)) {
-                throw failure(HttpStatus.UNPROCESSABLE_CONTENT, "음식을 구분하기 어려워요. 밝은 곳에서 전체가 보이도록 다시 찍어 주세요.");
+                throw failure(HttpStatus.UNPROCESSABLE_CONTENT, photo ? "음식을 구분하기 어려워요. 밝은 곳에서 전체가 보이도록 다시 찍어 주세요." : "어떤 음식인지 구분하기 어려워요. 재료나 조리 방법을 조금 더 적어 주세요.");
             }
             if (!"food".equals(status) || !result.path("items").isArray()
                     || result.path("items").isEmpty() || result.path("items").size() > 20) {
@@ -136,7 +92,7 @@ public class GeminiFoodAnalyzer implements FoodAnalyzer {
             }
             if (!result.path("notices").isArray() || result.path("notices").size() > 8) throw invalidResponse();
             var notices = new ArrayList<String>();
-            notices.add("사진으로 추정한 값입니다. 실제 음식의 양·조리법·소스에 따라 달라질 수 있어요.");
+            notices.add(photo ? "사진으로 추정한 값입니다. 실제 음식의 양·조리법·소스에 따라 달라질 수 있어요." : "음식 이름과 일반적인 분량으로 AI가 추정한 값이에요. 실제 음식이나 검증된 평균 영양값과 다를 수 있어요.");
             for (JsonNode notice : result.path("notices")) {
                 if (!notice.isTextual() || notice.asText().length() > 500) throw invalidResponse();
                 if (!notice.asText().isBlank()) notices.add(notice.asText());

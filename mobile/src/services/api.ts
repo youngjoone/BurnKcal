@@ -1,5 +1,10 @@
 import { uploadFile } from "./uploadFile";
-import { isAnalysisResult, MealPhoto, AnalysisMode } from "../types/analysis";
+import {
+  isAnalysisResult,
+  MealPhoto,
+  AnalysisMode,
+  textAnalysisRequest,
+} from "../types/analysis";
 
 export const API_URL = (
   process.env.EXPO_PUBLIC_API_URL || "http://localhost:8080"
@@ -67,3 +72,15 @@ export async function analyzePhoto(photo: MealPhoto, note: string) {
     throw new Error("분석 결과 형식이 올바르지 않아요. 다시 시도해 주세요.");
   return result;
 }
+
+export async function analyzeFoodName(foodName: string, portion: string) {
+  const result = await request("/api/analyze/text", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(textAnalysisRequest(foodName, portion)),
+  });
+  if (!isAnalysisResult(result))
+    throw new Error("분석 결과 형식이 올바르지 않아요. 다시 시도해 주세요.");
+  return result;
+}
+

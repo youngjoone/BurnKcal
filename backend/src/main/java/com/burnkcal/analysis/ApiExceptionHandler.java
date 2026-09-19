@@ -2,6 +2,7 @@ package com.burnkcal.analysis;
 
 import java.util.Map;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -15,6 +16,11 @@ public class ApiExceptionHandler {
     public ResponseEntity<Map<String, String>> invalidRequest(ResponseStatusException exception) {
         return ResponseEntity.status(exception.getStatusCode())
                 .body(Map.of("message", exception.getReason() == null ? "요청을 확인해 주세요." : exception.getReason()));
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<Map<String, String>> invalidJson() {
+        return ResponseEntity.badRequest().body(Map.of("message", "음식 이름과 먹은 양을 확인해 주세요."));
     }
 
     @ExceptionHandler(MaxUploadSizeExceededException.class)

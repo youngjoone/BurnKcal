@@ -1,3 +1,4 @@
+import { ManualMealScreen } from "./src/screens/ManualMealScreen";
 import { StatisticsScreen } from "./src/screens/StatisticsScreen";
 import { StatisticsRange } from "./src/domain/statistics";
 import { BottomNavigation, MainTab } from "./src/components/BottomNavigation";
@@ -31,7 +32,12 @@ import { HomeScreen } from "./src/screens/HomeScreen";
 import { PreviewScreen } from "./src/screens/PreviewScreen";
 import { ResultScreen } from "./src/screens/ResultScreen";
 import { Button } from "./src/components/Button";
-import { API_URL, analyzePhoto, checkServer } from "./src/services/api";
+import {
+  API_URL,
+  analyzePhoto,
+  analyzeFoodName,
+  checkServer,
+} from "./src/services/api";
 import { pickPhoto } from "./src/services/photos";
 import { AnalysisMode, AnalysisResult, MealPhoto } from "./src/types/analysis";
 import { colors, styles } from "./src/theme";
@@ -52,7 +58,7 @@ type Screen =
   | { step: "preview"; photo: MealPhoto; recordDay: string }
   | {
       step: "result";
-      photo: MealPhoto;
+      photo?: MealPhoto;
       result: AnalysisResult;
       id: string;
       recordDay: string;
@@ -437,38 +443,53 @@ export default function App() {
               </>
             )}
             {screen.step === "manualMeal" && (
-              <>
-                <Text style={styles.title}>식사 직접 기록</Text>
-                <Text style={styles.small}>{screen.recordDay}에 저장해요.</Text>
-                <FoodEditor
-                  busy={busy}
-                  items={[{ name: "", portion: "", kcal: 0 }]}
-                  confirmTitle="식사 기록 저장"
-                  onCancel={() => navigate({ step: "journal" })}
-                  onConfirm={(items) =>
-                    void run(async () => {
-                      if (!storageReady)
-                        throw new Error("기록을 먼저 불러와 주세요.");
-                      await saveMeal({
-                        id: screen.id,
-                        title: items
-                          .map((item) => item.name)
-                          .join(" · ")
-                          .slice(0, 100),
-                        createdAt: Date.now(),
-                        localDate: screen.recordDay,
-                        items,
-                        deletedAt: null,
-                      });
-                      await refreshMeals();
-                      setJournalDay(
-                        screen.recordDay === day ? null : screen.recordDay,
+              <ManualMealScreen
+                key={screen.id}
+                recordDay={screen.recordDay}
+                busy={busy}
+                mode={mode}
+                onCancel={() => navigate({ step: "journal" })}
+                onEstimate={(foodName, portion) =>
+                  void run(async () => {
+                    const currentMode = await checkServer();
+                    if (currentMode !== mode) {
+                      setMode(currentMode);
+                      throw new Error(
+                        "분석 모드가 갱신됐어요. 전송 안내를 확인하고 다시 눌러 주세요.",
                       );
-                      navigate({ step: "journal" });
-                    })
-                  }
-                />
-              </>
+                    }
+                    const result = await analyzeFoodName(foodName, portion);
+                    navigate({
+                      step: "result",
+                      result,
+                      id: screen.id,
+                      recordDay: screen.recordDay,
+                    });
+                  })
+                }
+                onSave={(items) =>
+                  void run(async () => {
+                    if (!storageReady)
+                      throw new Error("기록을 먼저 불러와 주세요.");
+                    await saveMeal({
+                      id: screen.id,
+                      title: items
+                        .map((item) => item.name)
+                        .join(" · ")
+                        .slice(0, 100),
+                      createdAt: Date.now(),
+                      localDate: screen.recordDay,
+                      items,
+                      deletedAt: null,
+                    });
+                    await refreshMeals();
+                    setJournalDay(
+                      screen.recordDay === day ? null : screen.recordDay,
+                    );
+                    navigate({ step: "journal" });
+                  })
+                }
+              />
             )}
             {screen.step === "editMeal" && (
               <FoodEditor

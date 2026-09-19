@@ -67,3 +67,18 @@ test("validates multi-food totals instead of accepting inconsistent AI numbers",
     false,
   );
 });
+
+test("food name requests default to one serving and preserve explicit portion assumptions", async () => {
+  const { textAnalysisRequest } = await import("../src/types/analysis");
+  assert.deepEqual(textAnalysisRequest(" 순대국 ", " "), {
+    foodName: "순대국",
+    portion: "1인분",
+  });
+  assert.deepEqual(textAnalysisRequest("순대국", "밥 포함"), {
+    foodName: "순대국",
+    portion: "밥 포함",
+  });
+  assert.throws(() => textAnalysisRequest(" ", ""));
+  assert.throws(() => textAnalysisRequest("가".repeat(101), ""));
+  assert.throws(() => textAnalysisRequest("순대국", "가".repeat(201)));
+});

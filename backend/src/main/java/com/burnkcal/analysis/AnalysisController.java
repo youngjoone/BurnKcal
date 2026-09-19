@@ -7,6 +7,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
@@ -36,6 +37,18 @@ public class AnalysisController {
         }
         validateImage(image);
         return analyzer.analyze(image.getBytes(), image.getContentType(), note.trim());
+    }
+
+    @PostMapping(value = "/api/analyze/text", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public AnalysisResult analyzeText(@RequestBody TextAnalysisRequest input) {
+        if (input == null || input.foodName() == null || input.foodName().isBlank() || input.foodName().length() > 100) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "음식 이름을 1~100자로 입력해 주세요.");
+        }
+        if (input.portion() != null && input.portion().length() > 200) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "먹은 양은 200자 이내로 입력해 주세요.");
+        }
+        String portion = input.portion() == null || input.portion().isBlank() ? "1인분" : input.portion().trim();
+        return analyzer.analyzeText(input.foodName().trim(), portion);
     }
 
     private void validateImage(MultipartFile image) throws IOException {

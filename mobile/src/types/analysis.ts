@@ -40,3 +40,15 @@ export function isAnalysisResult(value: unknown): value is AnalysisResult {
     v.notices.every((notice) => typeof notice === "string")
   );
 }
+
+export type TextAnalysisRequest = { foodName: string; portion: string };
+export function textAnalysisRequest(
+  foodName: string,
+  portion: string,
+): TextAnalysisRequest {
+  if (!foodName.trim() || foodName.length > 100)
+    throw new Error("음식 이름을 1~100자로 입력해 주세요.");
+  if (portion.length > 200)
+    throw new Error("먹은 양은 200자 이내로 입력해 주세요.");
+  return { foodName: foodName.trim(), portion: portion.trim() || "1인분" };
+}

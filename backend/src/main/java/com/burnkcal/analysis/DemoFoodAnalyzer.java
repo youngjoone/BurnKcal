@@ -8,6 +8,11 @@ import org.springframework.stereotype.Service;
 @ConditionalOnProperty(name = "burnkcal.analysis-mode", havingValue = "demo")
 public class DemoFoodAnalyzer implements FoodAnalyzer {
     @Override
+    public AnalysisResult analyzeText(String foodName, String portion) {
+        return analyze(new byte[0], "", "");
+    }
+
+    @Override
     public AnalysisResult analyze(byte[] image, String contentType, String note) {
         var items = List.of(
                 new AnalysisResult.FoodItem("밥", "1공기 (예시)", 300),
@@ -18,7 +23,7 @@ public class DemoFoodAnalyzer implements FoodAnalyzer {
                 "demo", "샘플 식사", totalKcal,
                 new AnalysisResult.CalorieRange(500, 800),
                 items,
-                List.of("AI 연결 전 데모입니다. 사진과 설명에 관계없이 같은 예시 결과를 반환합니다.",
+                List.of("AI 연결 전 데모입니다. 입력에 관계없이 같은 예시 결과를 반환합니다.",
                         "표시된 칼로리와 범위는 화면 확인용이며 실제 음식의 영양 정보가 아닙니다."));
     }
 }

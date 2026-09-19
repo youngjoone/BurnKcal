@@ -8,7 +8,7 @@ import { DemoNotice } from "../components/DemoNotice";
 import { colors, styles } from "../theme";
 
 type Props = {
-  photo: MealPhoto;
+  photo?: MealPhoto;
   recordDay: string;
   result: AnalysisResult;
   busy: boolean;
@@ -30,7 +30,7 @@ export function ResultScreen({
   const [items, setItems] = useState(result.items);
   const [editing, setEditing] = useState(false);
   const [edited, setEdited] = useState(false);
-  const [showNotices, setShowNotices] = useState(false);
+  const [showNotices, setShowNotices] = useState(!photo);
   if (editing)
     return (
       <FoodEditor
@@ -51,12 +51,14 @@ export function ResultScreen({
         <Text style={styles.title}>{result.title}</Text>
       </View>
       {demo && <DemoNotice />}
-      <Image
-        source={{ uri: photo.uri }}
-        style={styles.photo}
-        resizeMode="contain"
-        accessibilityLabel="전송한 음식 사진"
-      />
+      {photo && (
+        <Image
+          source={{ uri: photo.uri }}
+          style={styles.photo}
+          resizeMode="contain"
+          accessibilityLabel="전송한 음식 사진"
+        />
+      )}
       <View style={s.summary}>
         <View style={styles.row}>
           <Text style={s.summaryLabel}>총 예상 칼로리</Text>
